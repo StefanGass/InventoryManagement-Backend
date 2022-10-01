@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+
+  mysql:
+    image: mariadb:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: toor
+    cap_add:
+      - SYS_NICE
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./create_database.sql:/docker-entrypoint-initdb.d/create_database.sql

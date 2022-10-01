@@ -1,0 +1,5 @@
+# file is used to add exceptions for certain users with fancy login names;
+# IMPORTANT: use "_" instead of " " (space) for separation;
+
+username;firstName_lastName;mailAddress;
+test_user;Test_User;test.user@inventorymanagement.net;
