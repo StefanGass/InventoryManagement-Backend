@@ -10,13 +10,13 @@ import javax.persistence.Id;
 import java.time.LocalDateTime;
 
 /**
- * User managment model, defines user parameters - 1:1 mirrored to database.
+ * User management model, defines user parameters - 1:1 mirrored to database.
  */
 
 @Entity
 @Getter
 @Setter
-public class User {
+public class User implements Comparable<User> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,6 +26,7 @@ public class User {
     private String mailAddress;
     private Integer groupId;
     private boolean teamLeader;
+    private boolean admin;
     private boolean superAdmin;
     private LocalDateTime lastLogin;
     private boolean active;
@@ -34,15 +35,21 @@ public class User {
     }
 
     public User(String firstName, String lastName, String mailAddress, Integer groupId, boolean teamLeader,
-                boolean superAdmin, LocalDateTime lastLogin, boolean active) {
+                boolean admin, boolean superAdmin, LocalDateTime lastLogin, boolean active) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.mailAddress = mailAddress;
         this.groupId = groupId;
         this.teamLeader = teamLeader;
+        this.admin = admin;
         this.superAdmin = superAdmin;
         this.lastLogin = lastLogin;
         this.active = active;
+    }
+
+    @Override
+    public int compareTo(User o) {
+        return this.getLastName().compareToIgnoreCase(o.getLastName());
     }
 
 }

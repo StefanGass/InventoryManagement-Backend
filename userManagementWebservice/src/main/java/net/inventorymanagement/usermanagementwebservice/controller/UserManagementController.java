@@ -30,7 +30,7 @@ public class UserManagementController {
     }
 
     // GET one user
-    // user data is additionally base64 encoded and has to be decoded manually
+    // data is additionally base64 encoded and has to be decoded manually
     @GetMapping(path = "user/{username}")
     public User getData(@PathVariable("username") String encodedUsername) {
         byte[] decoded = Base64.decodeBase64(encodedUsername);

@@ -10,7 +10,6 @@
     </parent>
     <groupId>net.inventorymanagement</groupId>
     <artifactId>api-gateway-load-balancer</artifactId>
-    <version>1.0</version>
     <name>apiGatewayLoadBalancer</name>
     <description>apiGatewayLoadBalancer</description>
     <properties>

@@ -10,7 +10,6 @@
     </parent>
     <groupId>net.inventorymanagement</groupId>
     <artifactId>inventory-management-webservice</artifactId>
-    <version>1.0</version>
     <name>inventoryManagementWebservice</name>
     <description>inventoryManagementWebservice</description>
     <properties>

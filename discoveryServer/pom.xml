@@ -10,7 +10,6 @@
     </parent>
     <groupId>net.inventorymanagement</groupId>
     <artifactId>discovery-server</artifactId>
-    <version>1.0</version>
     <name>discoveryServer</name>
     <description>discoveryServer</description>
     <properties>

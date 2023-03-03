@@ -10,7 +10,6 @@
     </parent>
     <groupId>net.inventorymanagement</groupId>
     <artifactId>user-control-webservice</artifactId>
-    <version>1.0</version>
     <name>userControlWebservice</name>
     <description>userControlWebservice</description>
     <properties>

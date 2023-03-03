@@ -1,17 +1,12 @@
 # Inventory Management Backend
 
-## Legal information
+## Legal
 License: MIT\
+Author: Stefan Gass
+
+### inventoryManagementWebservice (Release 22.06.1):
 Authors: Stefan Gass & Isabella Zaby\
-in cooperation with the University of Applied Sciences Burgenland, Department Information Technology
-
-## Description
-Provides backend application featuring:
-+ Discovery server
-+ API gateway + Load balancer
-+ Restful webservices
-
-Works only in combination with the InventoryManagement-Frontend application and MariaDB database.
+in cooperation with the University of Applied Sciences Burgenland, department Information Technology
 
 ## Prerequisites
     Java >= 17
@@ -25,6 +20,21 @@ Works only in combination with the InventoryManagement-Frontend application and 
 
     Active directory
      (for authentication)
+
+## Python packages
+For inventoryManagementWebservice:
+```bash
+pip3 install brother-ql qrcode pillow reportlab
+```
+Keep in mind that the path to the "brother-ql" file has to be added to your $PATH variable for example like that (on Linux):
+```bash
+cd ~
+nano ./.profile
+# add the following line to the end of the script:
+export PATH=$PATH:/home/userfolder/.local/bin
+# safe, then proceed with
+source ~/.profile
+```
 
 ## Set up database
 If you want to use a local database install MariaDB according to the included create_database.sql file. If you want to use docker instead, enter the following command in a new terminal window:
@@ -41,12 +51,27 @@ mvn clean install
 ```
 To start the application:
 ```bash
-mvn spring-boot:run
+mvn spring-boot:run -Dspring-boot.run.profiles=prod
 # or
-java -jar ./target/[application-version].jar
+java -jar -Dspring.profiles.active=prod ./target/[application-version].jar
 ```
 
+## Description
+Provides backend application featuring:
++ Discovery server
++ API gateway + Load balancer
++ Restful webservices
+
+Works only in combination with the InventoryManagement-Frontend application and MariaDB database.
+
 ## Testing
+To start the application in dev mode:
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+# or
+java -jar -Dspring.profiles.active=dev ./target/[application-version].jar
+```
+
 To access Swagger enter the following URL in your browser:
 ```
 http://ip.of.your.webapplication:port/swagger-ui.html

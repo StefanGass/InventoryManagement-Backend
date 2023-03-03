@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -27,17 +28,16 @@ public class UserManagementService {
         username = prepareUsername(username);
         String firstName = getFirstName(username);
         String lastName = getLastName(username);
-        // change this to your extent
-        String mailAddress = firstName.toLowerCase() + "." + lastName.toLowerCase() + "@inventorymanagement.net";
+        String mailAddress = firstName.toLowerCase() + "." + lastName.toLowerCase() + "@kultur-burgenland.at";
         Integer userIndex = getUserIndex(firstName, lastName);
         if (userIndex != -1) {
-            User user = userManagementRepository.getById(userIndex);
+            User user = userManagementRepository.findByUserId(userIndex);
             user.setLastLogin(LocalDateTime.now());
             return userManagementRepository.save(user);
         } else {
             System.out.println("Created new user " + firstName + " " + lastName + ".");
             return userManagementRepository.save(new User(firstName, lastName, mailAddress, -1, false,
-                    false, LocalDateTime.now(), true));
+                    false, false, LocalDateTime.now(), true));
         }
     }
 
@@ -57,15 +57,11 @@ public class UserManagementService {
     // GET team
     // gets group id from user, checks if he/she is a teamleader and returns all members of his team if true
     public List<User> getTeamData(Integer id) {
-        User teamLeader = userManagementRepository.getById(id);
+        User teamLeader = userManagementRepository.findByUserId(id);
         List<User> team = new ArrayList<>();
-        List<User> allUsers = userManagementRepository.findAll();
         if (teamLeader.isTeamLeader()) {
-            for (User entry : allUsers) {
-                if (Objects.equals(entry.getGroupId(), teamLeader.getGroupId())) {
-                    team.add(entry);
-                }
-            }
+            team = userManagementRepository.findByGroupId(teamLeader.getGroupId());
+            team.sort(Comparator.naturalOrder());
         }
         return team;
     }
@@ -73,9 +69,11 @@ public class UserManagementService {
     // GET all
     // checks if user is super admin and returns all users if true
     public List<User> getAllData(Integer id) {
-        User superAdmin = userManagementRepository.getById(id);
-        if (superAdmin.isSuperAdmin()) {
-            return userManagementRepository.findAll();
+        User admin = userManagementRepository.findByUserId(id);
+        if (admin.isAdmin() || admin.isSuperAdmin()) {
+            List<User> allUsers = userManagementRepository.findAll();
+            allUsers.sort(Comparator.naturalOrder());
+            return allUsers;
         } else {
             return null;
         }

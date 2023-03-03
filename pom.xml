@@ -6,15 +6,15 @@
 
     <groupId>net.inventorymanagement</groupId>
     <artifactId>InventoryManagement-Backend</artifactId>
-    <version>1.0</version>
+    <version>23.03.1</version>
     <name>InventoryManagement-Backend</name>
     <description>InventoryManagement-Backend</description>
     <packaging>pom</packaging>
     <modules>
         <module>apiGatewayLoadBalancer</module>
+        <module>discoveryServer</module>
         <module>userControlWebservice</module>
         <module>userManagementWebservice</module>
         <module>inventoryManagementWebservice</module>
-        <module>discoveryServer</module>
     </modules>
 </project>

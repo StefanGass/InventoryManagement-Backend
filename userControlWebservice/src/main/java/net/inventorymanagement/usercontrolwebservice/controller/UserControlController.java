@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(path = "/api/usercontrol")
 public class UserControlController {
 
+    // string is shown when service is accessed directly via browser and login was possible...
     @GetMapping
     public String index() {
         return "Nothing to see here...";

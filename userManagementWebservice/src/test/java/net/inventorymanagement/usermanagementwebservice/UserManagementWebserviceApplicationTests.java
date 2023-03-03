@@ -21,7 +21,7 @@ class UserManagementWebserviceApplicationTests {
         List<String> userExceptionsList = new ArrayList<>();
         FileReader fileReader = FileReader.getInstance();
         fileReader.loadFile(userExceptionsList);
-        assertEquals("username;firstName_lastName;mailAdress;", userExceptionsList.get(0));
+        assertEquals("username;firstName_lastName;mailAddress;", userExceptionsList.get(0));
     }
 
 }
