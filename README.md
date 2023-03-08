@@ -4,7 +4,7 @@
 License: MIT\
 Author: Stefan Gass
 
-### inventoryManagementWebservice (Release 22.06.1):
+### inventoryManagementWebservice (Up to release 22.06.1):
 Authors: Stefan Gass & Isabella Zaby\
 in cooperation with the University of Applied Sciences Burgenland, department Information Technology
 
@@ -47,6 +47,7 @@ docker-compose up
 To compile, open new terminal window, then:
 ```bash
 cd path_to_project_folder_containing_pom.xml
+# IMPORTANT: Not the folder containing the parent bom, but the different subfolders instead, e. g. apiGatewayLoadBalancer !
 mvn clean install
 ```
 To start the application:
