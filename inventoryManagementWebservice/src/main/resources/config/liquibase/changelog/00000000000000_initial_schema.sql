@@ -1,88 +1,40 @@
-CREATE USER 'usermanagement'@'%' IDENTIFIED BY 'YOUR_SUPER_SECRET_PASSWORD';
-CREATE USER 'inventorymanagement'@'%' IDENTIFIED BY 'YOUR_SUPER_SECRET_PASSWORD';
-
-# DROP DATABASE IF EXISTS inventorymanagement;
-# DROP DATABASE IF EXISTS usermanagement;
-
-CREATE DATABASE IF NOT EXISTS inventorymanagement;
-CREATE DATABASE IF NOT EXISTS usermanagement;
-
-GRANT ALL PRIVILEGES ON *.* TO 'inventorymanagement'@'%';
-GRANT ALL PRIVILEGES ON *.* TO 'usermanagement'@'%';
-
-
-USE usermanagement;
-
-/*DROP TABLE IF EXISTS user;
-
-CREATE TABLE user
-(
-    `id`           int auto_increment primary key,
-    `first_name`   varchar(255),
-    `last_name`    varchar(255),
-    `mail_address` varchar(255),
-    `group_id`     int,
-    `team_leader`  boolean,
-    `admin`        boolean,
-    `super_admin`  boolean,
-    `last_login`   DATETIME,
-    `active`       boolean
-);*/
-
-INSERT into user
-values (1, 'Super', 'Admin', null, 1, 1, 1, 1, null, 1);
-
-USE inventorymanagement;
-
-/*DROP TABLE IF EXISTS change_history;
-DROP TABLE IF EXISTS picture;
-DROP TABLE IF EXISTS inventory_item;
-DROP TABLE IF EXISTS department_member;
-DROP TABLE IF EXISTS printer;
-DROP TABLE IF EXISTS department;
-DROP TABLE IF EXISTS supplier;
-DROP TABLE IF EXISTS location;
-DROP TABLE IF EXISTS type;
-DROP TABLE IF EXISTS category;
-
-CREATE TABLE category
+CREATE TABLE IF NOT EXISTS category
 (
     `id`            int auto_increment primary key,
     `category_name` varchar(255),
     `prefix`        varchar(10)
 );
 
-CREATE TABLE `type`
+CREATE TABLE IF NOT EXISTS `type`
 (
     `id`          int auto_increment primary key,
     `type_name`   varchar(255),
     `category_id` int,
 
-    FOREIGN KEY (`category_id`)
+     FOREIGN KEY (`category_id`)
         REFERENCES category (`id`)
         ON DELETE CASCADE
 );
 
-CREATE TABLE location
+CREATE TABLE IF NOT EXISTS location
 (
     `id`            int auto_increment primary key,
     `location_name` varchar(255)
 );
-
-CREATE TABLE supplier
+CREATE TABLE IF NOT EXISTS supplier
 (
     `id`            int auto_increment primary key,
     `supplier_name` varchar(255),
     `link`          varchar(255)
 );
 
-CREATE TABLE department
+CREATE TABLE IF NOT EXISTS department
 (
     `id`              int auto_increment primary key,
     `department_name` varchar(255)
 );
 
-CREATE TABLE printer
+CREATE TABLE IF NOT EXISTS printer
 (
     `id`            int auto_increment primary key,
     `printer_name`  varchar(255),
@@ -91,7 +43,7 @@ CREATE TABLE printer
     `label_format`  varchar(255)
 );
 
-CREATE TABLE department_member
+CREATE TABLE IF NOT EXISTS department_member
 (
     `id`                int auto_increment primary key,
     `user_id`           int,
@@ -108,7 +60,7 @@ CREATE TABLE department_member
         ON DELETE CASCADE
 );
 
-CREATE TABLE inventory_item
+CREATE TABLE IF NOT EXISTS inventory_item
 (
     `id`                   int auto_increment primary key,
     `item_internal_number` varchar(255),
@@ -150,7 +102,7 @@ CREATE TABLE inventory_item
         ON DELETE CASCADE
 );
 
-CREATE TABLE picture
+CREATE TABLE IF NOT EXISTS picture
 (
     `id`            int auto_increment primary key,
     `picture_url`   varchar(255),
@@ -162,7 +114,7 @@ CREATE TABLE picture
         ON DELETE CASCADE
 );
 
-CREATE TABLE change_history
+CREATE TABLE IF NOT EXISTS change_history
 (
     `id`             int auto_increment primary key,
     `user`           varchar(255),
@@ -174,32 +126,4 @@ CREATE TABLE change_history
     FOREIGN KEY (inventory_id)
         REFERENCES inventory_item (id)
         ON DELETE CASCADE
-);*/
-
-INSERT into category
-values (1, 'Testcategory', 'TEST');
-
-INSERT into type
-values (1, 'Testtype', 1);
-
-INSERT into location
-values (1, 'Testlocation');
-
-INSERT into supplier
-values (1, 'Testsupplier', 'https://www.testsupplier.net');
-
-INSERT into department
-values (1, 'Testdepartment');
-
-INSERT into printer
-values (1, 'TEST-1', 'QL-820NWB', 'tcp://192.168.0.5', '17x54');
-
-INSERT into department_member
-values (1, 1, 1, true, 1);
-
-INSERT into inventory_item
-values (1, 'TEST-2022-0001', 1, 'test', 'ABC123', 1, 1, 11, 11, 0, 0, '', null, null, null, '', '', 'LAGERND', true,
-        false, 1, '');
-
-INSERT into change_history
-values (1, 1, '2022-08-18 10:17:26', 'Inventargegenstand angelegt.', 'Test test test', 1);
+);
