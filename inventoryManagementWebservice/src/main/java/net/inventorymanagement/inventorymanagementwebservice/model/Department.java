@@ -1,22 +1,22 @@
 package net.inventorymanagement.inventorymanagementwebservice.model;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-
+import com.fasterxml.jackson.annotation.*;
+import java.util.*;
 import javax.persistence.*;
-import java.util.List;
+import lombok.*;
+import org.hibernate.search.annotations.*;
 
 @Entity
 @Table(name = "department")
 @Getter
 @Setter
 @ToString
+@Indexed
 public class Department implements Comparable<Department> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Field(name = "departmentId")
     private int id;
     private String departmentName;
     @OneToMany(mappedBy = "department")
