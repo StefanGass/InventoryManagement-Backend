@@ -1,47 +1,56 @@
 package net.inventorymanagement.inventorymanagementwebservice.model;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-
+import com.fasterxml.jackson.annotation.*;
+import java.time.*;
+import java.util.*;
 import javax.persistence.*;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
+import lombok.*;
+import org.hibernate.search.annotations.*;
 
 @Entity
 @Table(name = "inventory_item")
 @Getter
 @Setter
 @ToString
+@Indexed
 public class InventoryItem implements Comparable<InventoryItem>, Cloneable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+    @Field
     private String itemInternalNumber;
     @OneToOne
     @JoinColumn(name = "type_id")
+    @IndexedEmbedded
     private Type type;
+    @Field
     private String itemName;
+    @Field
     private String serialNumber;
     @OneToOne
     @JoinColumn(name = "supplier_id")
+    @IndexedEmbedded
     private Supplier supplier;
     @OneToOne
     @JoinColumn(name = "location_id")
+    @IndexedEmbedded
     private Location location;
     private Integer pieces;
     private Integer piecesStored;
     private Integer piecesIssued;
     private Integer piecesDropped;
+    @Field
     private String issuedTo;
     private LocalDateTime deliveryDate;
+
     private LocalDateTime issueDate;
     private LocalDateTime droppingDate;
+    @Field
     private String droppingReason;
+    @Field
     private String comments;
+    @Field
     private String status;
     @OneToMany(mappedBy = "inventoryItem")
     @JsonManagedReference
@@ -55,7 +64,9 @@ public class InventoryItem implements Comparable<InventoryItem>, Cloneable {
     private boolean droppingQueue;
     @OneToOne
     @JoinColumn(name = "department_id")
+    @IndexedEmbedded
     private Department department;
+    @Field
     private String oldItemNumber;
 
     public InventoryItem clone() throws CloneNotSupportedException {
@@ -69,8 +80,12 @@ public class InventoryItem implements Comparable<InventoryItem>, Cloneable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         InventoryItem that = (InventoryItem) o;
         return itemInternalNumber.equals(that.itemInternalNumber);
     }

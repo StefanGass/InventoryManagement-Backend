@@ -1,24 +1,18 @@
 package net.inventorymanagement.inventorymanagementwebservice.controller;
 
-import net.inventorymanagement.inventorymanagementwebservice.dtos.ChartItemDTO;
-import net.inventorymanagement.inventorymanagementwebservice.dtos.DetailInventoryItemDTO;
-import net.inventorymanagement.inventorymanagementwebservice.dtos.InventoryItemDTO;
-import net.inventorymanagement.inventorymanagementwebservice.facades.InventoryItemFacade;
+import java.time.*;
+import java.util.*;
+import java.util.stream.*;
+import javax.ws.rs.*;
+import net.inventorymanagement.inventorymanagementwebservice.dtos.*;
+import net.inventorymanagement.inventorymanagementwebservice.facades.*;
 import net.inventorymanagement.inventorymanagementwebservice.model.*;
-import net.inventorymanagement.inventorymanagementwebservice.repositories.InventoryItemRepository;
-import net.inventorymanagement.inventorymanagementwebservice.service.InventoryManagementService;
-import net.inventorymanagement.inventorymanagementwebservice.utils.ItemComparator;
-import net.inventorymanagement.inventorymanagementwebservice.utils.PythonExecutor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
+import net.inventorymanagement.inventorymanagementwebservice.repositories.*;
+import net.inventorymanagement.inventorymanagementwebservice.service.*;
+import net.inventorymanagement.inventorymanagementwebservice.utils.*;
+import org.springframework.beans.factory.annotation.*;
+import org.springframework.cloud.netflix.eureka.*;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 @EnableEurekaClient
 @RestController
@@ -34,6 +28,9 @@ public class InventoryManagementController {
     @Autowired
     private InventoryItemRepository inventoryItemRepository;
 
+    @Autowired
+    private SmartSearchService smartSearchService;
+
     public InventoryManagementController(InventoryManagementService inventoryManagementService) {
         this.inventoryManagementService = inventoryManagementService;
     }
@@ -43,18 +40,23 @@ public class InventoryManagementController {
     @GetMapping(path = "inventory")
     public List<InventoryItemDTO> getAllInventoryItems() {
         List<InventoryItem> inventoryItems = inventoryManagementService.getAllInventoryItems();
-        return inventoryItems.stream().map(inventoryItemFacade::mapModelToDTO).collect(Collectors.toList());
+        return inventoryItems.stream().map(inventoryItemFacade::mapModelToDTO)
+            .collect(Collectors.toList());
     }
 
     @GetMapping(path = "inventory/internal_number/{type}")
     public String getItemInternalNumberByType(@PathVariable("type") String typeName) {
-        return inventoryManagementService.generateInventoryInternalNumber(inventoryManagementService.getTypeByName(typeName));
+        return inventoryManagementService.generateInventoryInternalNumber(
+            inventoryManagementService.getTypeByName(typeName));
     }
 
     @GetMapping(path = "inventory/department/{id}")
-    public List<InventoryItemDTO> getInventoryItemsByDepartmentId(@PathVariable("id") Integer departmentId) throws Exception {
-        List<InventoryItem> inventoryItems = inventoryManagementService.getInventoryItemsByDepartmentId(departmentId);
-        return inventoryItems.stream().map(inventoryItemFacade::mapModelToDTO).collect(Collectors.toList());
+    public List<InventoryItemDTO> getInventoryItemsByDepartmentId(
+        @PathVariable("id") Integer departmentId) throws Exception {
+        List<InventoryItem> inventoryItems =
+            inventoryManagementService.getInventoryItemsByDepartmentId(departmentId);
+        return inventoryItems.stream().map(inventoryItemFacade::mapModelToDTO)
+            .collect(Collectors.toList());
     }
 
     @GetMapping("inventory/{id}")
@@ -66,15 +68,19 @@ public class InventoryManagementController {
 
     @GetMapping("inventory/search/{internalNumber}")
     public Integer getInventoryItemByInternalNumber(@PathVariable String internalNumber) {
-        InventoryItem item = inventoryManagementService.getInventoryItemByInternalNumber(internalNumber);
+        InventoryItem item =
+            inventoryManagementService.getInventoryItemByInternalNumber(internalNumber);
         return item.getId();
     }
 
     @PostMapping(path = "inventory")
-    public InventoryItemDTO addInventoryItem(@RequestBody DetailInventoryItemDTO model) throws Exception {
+    public InventoryItemDTO addInventoryItem(@RequestBody DetailInventoryItemDTO model)
+        throws Exception {
         InventoryItem item = inventoryItemFacade.mapDTOToModel(model, null);
         item = inventoryManagementService.addInventory(item);
-        inventoryManagementService.addChange(getChange("Inventargegenstand angelegt.", item, model.getUserName(), item.toString(getPictureCounter(model))));
+        inventoryManagementService.addChange(
+            getChange("Inventargegenstand angelegt.", item, model.getUserName(),
+                item.toString(getPictureCounter(model))));
         inventoryItemFacade.savePictures(model.getPictures(), item, false);
         PythonExecutor.generateQrCodeWithPythonScript(item.getId(), item.getItemInternalNumber());
         return inventoryItemFacade.mapModelToDTO(item);
@@ -82,32 +88,42 @@ public class InventoryManagementController {
 
     @PatchMapping("inventory/{id}")
     public InventoryItem updateInventoryItem(
-            @PathVariable(value = "id") String id,
-            @RequestBody DetailInventoryItemDTO itemDetails) throws Exception {
+        @PathVariable(value = "id") String id,
+        @RequestBody DetailInventoryItemDTO itemDetails) throws Exception {
         InventoryItem inventoryItemToUpdate = inventoryManagementService.getInventoryItemById(id);
         InventoryItem originalItem = inventoryItemToUpdate.clone();
-        inventoryItemToUpdate = inventoryItemFacade.mapDTOToModel(itemDetails, inventoryItemToUpdate);
-        String change_history = ItemComparator.getChangeString(originalItem, inventoryItemToUpdate, getPictureCounter(itemDetails));
+        inventoryItemToUpdate =
+            inventoryItemFacade.mapDTOToModel(itemDetails, inventoryItemToUpdate);
+        String change_history = ItemComparator.getChangeString(originalItem, inventoryItemToUpdate,
+            getPictureCounter(itemDetails));
         if (!change_history.equals("")) {
-            if (Objects.equals(inventoryItemToUpdate.getPieces(), inventoryItemToUpdate.getPiecesDropped())) {
-                inventoryManagementService.addChange(getChange("Inventargegenstand ausgeschieden.", inventoryItemToUpdate, itemDetails.getUserName(), change_history));
+            if (Objects.equals(inventoryItemToUpdate.getPieces(),
+                inventoryItemToUpdate.getPiecesDropped())) {
+                inventoryManagementService.addChange(
+                    getChange("Inventargegenstand ausgeschieden.", inventoryItemToUpdate,
+                        itemDetails.getUserName(), change_history));
             } else {
-                inventoryManagementService.addChange(getChange("Inventargegenstand bearbeitet.", inventoryItemToUpdate, itemDetails.getUserName(), change_history));
+                inventoryManagementService.addChange(
+                    getChange("Inventargegenstand bearbeitet.", inventoryItemToUpdate,
+                        itemDetails.getUserName(), change_history));
             }
         }
         if (itemDetails.getPictures() != null && itemDetails.getPictures().size() > 0) {
             System.out.println(itemDetails.getPictures().get(0).toString());
-            inventoryItemFacade.savePictures(itemDetails.getPictures(), inventoryItemToUpdate, false);
+            inventoryItemFacade.savePictures(itemDetails.getPictures(), inventoryItemToUpdate,
+                false);
         }
         return inventoryItemRepository.save(inventoryItemToUpdate);
     }
 
     @PatchMapping("inventory/{id}/deactivate")
     public InventoryItem deactivateInventoryItem(
-            @RequestBody InventoryItemDTO inventoryItemDTO,
-            @PathVariable String id) throws Exception {
+        @RequestBody InventoryItemDTO inventoryItemDTO,
+        @PathVariable String id) throws Exception {
         InventoryItem inventoryItem = inventoryManagementService.deactivateInventoryItem(id);
-        inventoryManagementService.addChange(getChange("Inventargegenstand deaktiviert.", inventoryItem, inventoryItemDTO.getUserName(), null));
+        inventoryManagementService.addChange(
+            getChange("Inventargegenstand deaktiviert.", inventoryItem,
+                inventoryItemDTO.getUserName(), null));
         return inventoryItem;
     }
 
@@ -115,26 +131,34 @@ public class InventoryManagementController {
     public InventoryItem activateInventoryItem(@RequestBody InventoryItemDTO inventoryItemDTO,
                                                @PathVariable String id) throws Exception {
         InventoryItem inventoryItem = inventoryManagementService.activateInventoryItem(id);
-        inventoryManagementService.addChange(getChange("Inventargegenstand aktiviert.", inventoryItem, inventoryItemDTO.getUserName(), null));
+        inventoryManagementService.addChange(
+            getChange("Inventargegenstand aktiviert.", inventoryItem,
+                inventoryItemDTO.getUserName(), null));
         return inventoryItem;
     }
 
     @PatchMapping("inventory/transferprotocol/{id}/from/{firstName}/{lastName}")
     public InventoryItem addTransferProtocol(
-            @PathVariable(value = "id") String id,
-            @PathVariable(value = "firstName") String firstName,
-            @PathVariable(value = "lastName") String lastName,
-            @RequestBody Picture picture) throws Exception {
+        @PathVariable(value = "id") String id,
+        @PathVariable(value = "firstName") String firstName,
+        @PathVariable(value = "lastName") String lastName,
+        @RequestBody Picture picture) throws Exception {
         InventoryItem inventoryItemToUpdate = inventoryManagementService.getInventoryItemById(id);
         String userName = firstName + " " + lastName;
-        inventoryManagementService.addChange(getChange("Inventargegenstand ausgegeben.", inventoryItemToUpdate, userName, "Ausgabeprotokoll hinzugefügt, ausgegeben an: {" + inventoryItemToUpdate.getIssuedTo() + "}"));
-        String pdfBase64 = PythonExecutor.generateTransferProtocolWithPythonScript(inventoryItemToUpdate, picture, userName);
+        inventoryManagementService.addChange(
+            getChange("Inventargegenstand ausgegeben.", inventoryItemToUpdate, userName,
+                "Ausgabeprotokoll hinzugefügt, ausgegeben an: {" +
+                    inventoryItemToUpdate.getIssuedTo() + "}"));
+        String pdfBase64 =
+            PythonExecutor.generateTransferProtocolWithPythonScript(inventoryItemToUpdate, picture,
+                userName);
         if (pdfBase64 != null) {
             picture.setPictureUrl(pdfBase64);
             List<Picture> pictureList = new ArrayList<>();
             pictureList.add(picture);
             inventoryItemToUpdate.setPictures(pictureList);
-            inventoryItemFacade.savePictures(inventoryItemToUpdate.getPictures(), inventoryItemToUpdate, true);
+            inventoryItemFacade.savePictures(inventoryItemToUpdate.getPictures(),
+                inventoryItemToUpdate, true);
             return inventoryItemRepository.save(inventoryItemToUpdate);
         } else {
             throw new Exception("Übergabeprotokoll konnte nicht hinzugefügt werden.");
@@ -149,7 +173,8 @@ public class InventoryManagementController {
         return pictureCounter;
     }
 
-    private Change getChange(String changeStatus, InventoryItem savedItem, String userName, String changeHistory) {
+    private Change getChange(String changeStatus, InventoryItem savedItem, String userName,
+                             String changeHistory) {
         Change change = new Change();
         change.setChangeStatus(changeStatus);
         change.setInventoryItem(savedItem);
@@ -234,22 +259,28 @@ public class InventoryManagementController {
     // ####################### Department members #######################
 
     @GetMapping(path = "department/{id}")
-    public List<DepartmentMember> getAllDepartmentMembersByDepartmentId(@PathVariable("id") Integer departmentId) {
+    public List<DepartmentMember> getAllDepartmentMembersByDepartmentId(
+        @PathVariable("id") Integer departmentId) {
         return inventoryManagementService.getAllDepartmentMembersFromDepartmentId(departmentId);
     }
 
     @PostMapping(path = "department/member/{id}")
     public String addDepartmentMemberToDepartment(@PathVariable("id") Integer departmentId,
                                                   @RequestBody Integer userId) throws Exception {
-        Department department = inventoryManagementService.addDepartmentMemberToDepartment(departmentId, userId);
-        return "User erfolgreich zur Abteilung \"" + department.getDepartmentName() + "\" hinzugefügt.";
+        Department department =
+            inventoryManagementService.addDepartmentMemberToDepartment(departmentId, userId);
+        return "User erfolgreich zur Abteilung \"" + department.getDepartmentName() +
+            "\" hinzugefügt.";
     }
 
     @DeleteMapping(path = "department/member/{id}")
     public String removeDepartmentMemberFromDepartment(@PathVariable("id") Integer departmentId,
-                                                       @RequestBody Integer userId) throws Exception {
-        Department department = inventoryManagementService.removeDepartmentMemberFromDepartment(departmentId, userId);
-        return "User erfolgreich von der Abteilung \"" + department.getDepartmentName() + "\" entfernt.";
+                                                       @RequestBody Integer userId)
+        throws Exception {
+        Department department =
+            inventoryManagementService.removeDepartmentMemberFromDepartment(departmentId, userId);
+        return "User erfolgreich von der Abteilung \"" + department.getDepartmentName() +
+            "\" entfernt.";
     }
 
     // ####################### Print #######################
@@ -267,18 +298,21 @@ public class InventoryManagementController {
     @PostMapping(path = "printer")
     public String addPrinter(@RequestBody Printer printer) throws Exception {
         inventoryManagementService.addPrinter(printer);
-        return "Drucker \"" + printer.getPrinterName() + "\" mit IP \"" + printer.getPrinterIp() + "\" erfolgreich hinzugefügt.";
+        return "Drucker \"" + printer.getPrinterName() + "\" mit IP \"" + printer.getPrinterIp() +
+            "\" erfolgreich hinzugefügt.";
     }
 
     @GetMapping("printer/{id}/print/{itemId}/pieces/{pieces}/user/{userId}")
     public String printQrCode(
-            @PathVariable(value = "id") Integer printerId,
-            @PathVariable(value = "itemId") Integer itemId,
-            @PathVariable(value = "pieces") Integer pieces,
-            @PathVariable(value = "userId") Integer userId
+        @PathVariable(value = "id") Integer printerId,
+        @PathVariable(value = "itemId") Integer itemId,
+        @PathVariable(value = "pieces") Integer pieces,
+        @PathVariable(value = "userId") Integer userId
     ) throws Exception {
-        inventoryManagementService.printQrCodeAndSetDefaultPrinter(printerId, itemId, pieces, userId);
-        return pieces + " Etikett(en) von Item ID \"" + itemId + "\" auf Drucker ID \"" + printerId + "\" von User \"" + userId + "\" gedruckt.";
+        inventoryManagementService.printQrCodeAndSetDefaultPrinter(printerId, itemId, pieces,
+            userId);
+        return pieces + " Etikett(en) von Item ID \"" + itemId + "\" auf Drucker ID \"" +
+            printerId + "\" von User \"" + userId + "\" gedruckt.";
     }
 
     // ####################### Charts #######################
@@ -289,14 +323,22 @@ public class InventoryManagementController {
     }
 
     @GetMapping(path = "chart/activity/department/{id}")
-    public List<ChartItemDTO> getActivityChart(@PathVariable("id") Integer departmentId) throws Exception {
+    public List<ChartItemDTO> getActivityChart(@PathVariable("id") Integer departmentId)
+        throws Exception {
         return inventoryManagementService.getActivityChartItemsByDepartment(departmentId);
     }
 
     @GetMapping(path = "chart/last_items/")
-    public List<InventoryItemDTO> getLastTwentyItems() {
-        List<InventoryItem> inventoryItems = inventoryManagementService.getAllInventoryItems();
-        List<InventoryItemDTO> inventoryItemsDTO = new ArrayList<>(inventoryItems.stream().map(inventoryItemFacade::mapModelToDTO).toList());
+    public List<InventoryItemDTO> getLastTwentyItems(
+        @QueryParam("search") Optional<String> search) {
+        List<InventoryItem> inventoryItems;
+        if (search.isPresent() && !search.get().isBlank()) {
+            inventoryItems = smartSearchService.getPostBasedOnWord(null, search.get());
+        } else {
+            inventoryItems = inventoryManagementService.getAllInventoryItems();
+        }
+        List<InventoryItemDTO> inventoryItemsDTO = new ArrayList<>(
+            inventoryItems.stream().map(inventoryItemFacade::mapModelToDTO).toList());
         inventoryItemsDTO.sort(Comparator.reverseOrder());
         if (inventoryItemsDTO.size() > 20) {
             return inventoryItemsDTO.subList(0, 20);
@@ -306,9 +348,18 @@ public class InventoryManagementController {
     }
 
     @GetMapping(path = "chart/last_items/department/{id}")
-    public List<InventoryItemDTO> getLastTenItemsByDepartmentId(@PathVariable("id") Integer departmentId) throws Exception {
-        List<InventoryItem> inventoryItems = inventoryManagementService.getInventoryItemsByDepartmentId(departmentId);
-        List<InventoryItemDTO> inventoryItemsDTO = new ArrayList<>(inventoryItems.stream().map(inventoryItemFacade::mapModelToDTO).toList());
+    public List<InventoryItemDTO> getLastTenItemsByDepartmentId(
+        @PathVariable("id") Integer departmentId, @QueryParam("search")
+    Optional<String> search) throws Exception {
+        List<InventoryItem> inventoryItems;
+        if (search.isPresent() && !search.get().isBlank()) {
+            inventoryItems = smartSearchService.getPostBasedOnWord(departmentId, search.get());
+        } else {
+            inventoryItems =
+                inventoryManagementService.getInventoryItemsByDepartmentId(departmentId);
+        }
+        List<InventoryItemDTO> inventoryItemsDTO = new ArrayList<>(
+            inventoryItems.stream().map(inventoryItemFacade::mapModelToDTO).toList());
         inventoryItemsDTO.sort(Comparator.reverseOrder());
         if (inventoryItemsDTO.size() > 10) {
             return inventoryItemsDTO.subList(0, 10);
@@ -332,4 +383,25 @@ public class InventoryManagementController {
         return inventoryManagementService.getDepartmentItemChart();
     }
 
+    // ####################### Search #######################
+    @PostMapping(path = "inventory/search/reindex")
+    public void reindexSearch() throws InterruptedException {
+        smartSearchService.reindex();
+    }
+
+    @GetMapping(path = "inventory/search")
+    public List<InventoryItemDTO> smartSearch(@QueryParam("search") String search) {
+        var inventoryItems = smartSearchService.getPostBasedOnWord(null, search);
+        return inventoryItems.stream().map(inventoryItemFacade::mapModelToDTO)
+            .collect(Collectors.toList());
+    }
+
+    @GetMapping(path = "inventory/search/department/{id}")
+    public List<InventoryItemDTO> smartSearchByDepartment(@PathVariable("id") Integer departmentId,
+                                                          @QueryParam("search") String search) {
+        var inventoryItems = smartSearchService.getPostBasedOnWord(departmentId, search);
+
+        return inventoryItems.stream().map(inventoryItemFacade::mapModelToDTO)
+            .collect(Collectors.toList());
+    }
 }
