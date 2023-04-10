@@ -18,7 +18,7 @@ public class InventoryItem implements Comparable<InventoryItem>, Cloneable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    @Field
+    @Field(analyze = Analyze.NO) // Analyze.NO Prevents splitting by -
     private String itemInternalNumber;
     @OneToOne
     @JoinColumn(name = "type_id")

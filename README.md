@@ -50,15 +50,28 @@ cd path_to_project_folder_containing_pom.xml
 # IMPORTANT: Not the folder containing the parent bom, but the different subfolders instead, e. g. apiGatewayLoadBalancer !
 mvn clean install
 ```
+
 To start the application:
+
 ```bash
 mvn spring-boot:run -Dspring-boot.run.profiles=prod
 # or
 java -jar -Dspring.profiles.active=prod ./target/[application-version].jar
 ```
 
+### Searching
+
+Files must be manually reindexed if an exsting database is used or if data is modified outside Hibernate.
+To Reindex call the following endpoint:
+
+```
+POST http://localhost:8089/api/inventorymanagement/inventory/search/reindex
+```
+
 ## Description
+
 Provides backend application featuring:
+
 + Discovery server
 + API gateway + Load balancer
 + Restful webservices
