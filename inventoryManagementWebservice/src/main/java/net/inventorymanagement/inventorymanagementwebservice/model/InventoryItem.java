@@ -5,6 +5,7 @@ import java.time.*;
 import java.util.*;
 import javax.persistence.*;
 import lombok.*;
+import org.apache.lucene.analysis.core.*;
 import org.hibernate.search.annotations.*;
 
 @Entity
@@ -13,12 +14,16 @@ import org.hibernate.search.annotations.*;
 @Setter
 @ToString
 @Indexed
+@AnalyzerDef(name = "itemInternalNumberAnalyzer",
+    tokenizer = @TokenizerDef(factory = KeywordTokenizerFactory.class),
+    filters = {@TokenFilterDef(factory = LowerCaseFilterFactory.class)}
+)
 public class InventoryItem implements Comparable<InventoryItem>, Cloneable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    @Field(analyze = Analyze.NO) // Analyze.NO Prevents splitting by -
+    @Field(analyzer = @Analyzer(definition = "itemInternalNumberAnalyzer"))
     private String itemInternalNumber;
     @OneToOne
     @JoinColumn(name = "type_id")
