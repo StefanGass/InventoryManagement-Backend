@@ -1,15 +1,13 @@
 package net.inventorymanagement.inventorymanagementwebservice.service;
 
-import net.inventorymanagement.inventorymanagementwebservice.dtos.ChartItemDTO;
+import java.time.*;
+import java.util.*;
+import net.inventorymanagement.inventorymanagementwebservice.dtos.*;
 import net.inventorymanagement.inventorymanagementwebservice.model.*;
 import net.inventorymanagement.inventorymanagementwebservice.repositories.*;
-import net.inventorymanagement.inventorymanagementwebservice.utils.PythonExecutor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
+import net.inventorymanagement.inventorymanagementwebservice.utils.*;
+import org.springframework.beans.factory.annotation.*;
+import org.springframework.stereotype.*;
 
 @Service
 public class InventoryManagementService {
@@ -281,7 +279,8 @@ public class InventoryManagementService {
     private Department checkIfDepartmentAlreadyExists(Department department) throws Exception {
         Department departmentDuplicate = departmentRepository.findByDepartmentName(department.getDepartmentName());
         if (departmentDuplicate != null) {
-            throw new Exception("Abteilung \"" + departmentDuplicate.getDepartmentName() + "\" existiert bereits!");
+            throw new Exception(
+                "Abteilung \"" + departmentDuplicate.getDepartmentName() + "\" existiert bereits!");
         }
         return department;
     }
@@ -292,10 +291,16 @@ public class InventoryManagementService {
         return departmentRepository.findByDepartmentId(id).getDepartmentMembers();
     }
 
-    public Department addDepartmentMemberToDepartment(Integer departmentId, Integer userId) throws Exception {
+    public DepartmentMember getDepartmentMemberByUserId(Integer id) {
+        return departmentMemberRepository.findByUserId(id);
+    }
+
+    public Department addDepartmentMemberToDepartment(Integer departmentId, Integer userId)
+        throws Exception {
         Department department = departmentRepository.findByDepartmentId(departmentId);
         if (department != null) {
-            departmentMemberRepository.save(Objects.requireNonNull(checkIfDepartmentMemberIsAlreadyAssignedToADepartment(userId, department)));
+            departmentMemberRepository.save(Objects.requireNonNull(
+                checkIfDepartmentMemberIsAlreadyAssignedToADepartment(userId, department)));
             return department;
         } else {
             throw new Exception("Die Abteilung existiert nicht! Bitte die IT kontaktieren!");
