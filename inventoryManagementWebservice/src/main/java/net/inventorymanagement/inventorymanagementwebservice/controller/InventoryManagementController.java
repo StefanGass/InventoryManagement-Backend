@@ -44,6 +44,14 @@ public class InventoryManagementController {
             .collect(Collectors.toList());
     }
 
+    @GetMapping(path = "inventory/droppingQueue")
+    public List<InventoryItemDTO> getAllDroppingQueueInventoryItems() {
+        List<InventoryItem> inventoryItems = inventoryManagementService.getAllInventoryItems();
+        return inventoryItems.stream().filter(InventoryItem::isDroppingQueue)
+            .map(inventoryItemFacade::mapModelToDTO)
+            .collect(Collectors.toList());
+    }
+
     @GetMapping(path = "inventory/internal_number/{type}")
     public String getItemInternalNumberByType(@PathVariable("type") String typeName) {
         return inventoryManagementService.generateInventoryInternalNumber(
@@ -56,6 +64,16 @@ public class InventoryManagementController {
         List<InventoryItem> inventoryItems =
             inventoryManagementService.getInventoryItemsByDepartmentId(departmentId);
         return inventoryItems.stream().map(inventoryItemFacade::mapModelToDTO)
+            .collect(Collectors.toList());
+    }
+
+    @GetMapping(path = "inventory/department/{id}/droppingQueue")
+    public List<InventoryItemDTO> getDroppingQueueInventoryItemsByDepartmentId(
+        @PathVariable("id") Integer departmentId) throws Exception {
+        List<InventoryItem> inventoryItems =
+            inventoryManagementService.getInventoryItemsByDepartmentId(departmentId);
+        return inventoryItems.stream().filter(InventoryItem::isDroppingQueue)
+            .map(inventoryItemFacade::mapModelToDTO)
             .collect(Collectors.toList());
     }
 
@@ -262,6 +280,12 @@ public class InventoryManagementController {
     public List<DepartmentMember> getAllDepartmentMembersByDepartmentId(
         @PathVariable("id") Integer departmentId) {
         return inventoryManagementService.getAllDepartmentMembersFromDepartmentId(departmentId);
+    }
+
+    @GetMapping(path = "department/member/{id}")
+    public DepartmentMember getDepartmentMember(
+        @PathVariable("id") Integer userId) {
+        return inventoryManagementService.getDepartmentMemberByUserId(userId);
     }
 
     @PostMapping(path = "department/member/{id}")
