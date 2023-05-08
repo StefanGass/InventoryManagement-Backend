@@ -17,14 +17,14 @@ import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAu
 public class UserControlConfiguration extends WebSecurityConfigurerAdapter {
 
     // ldap-instance
-    @Override
+/*    @Override
     protected void configure(AuthenticationManagerBuilder auth) {
         ActiveDirectoryLdapAuthenticationProvider adProvider =
                 new ActiveDirectoryLdapAuthenticationProvider("YOUR.DOMAIN.net", "ldap://IP.OF.YOUR.LDAP:389");
         adProvider.setConvertSubErrorCodesToExceptions(true);
         adProvider.setUseAuthenticationRequestCredentials(true);
         auth.authenticationProvider(adProvider);
-    }
+    }*/
 
     // authentication-interface
     @Override
@@ -34,9 +34,11 @@ public class UserControlConfiguration extends WebSecurityConfigurerAdapter {
                 .and()
                 .authorizeRequests()
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .anyRequest().authenticated()
+                .anyRequest().permitAll();
+
+/*                .authenticated()
                 .and()
-                .httpBasic();
+                .httpBasic();*/
     }
 
 }

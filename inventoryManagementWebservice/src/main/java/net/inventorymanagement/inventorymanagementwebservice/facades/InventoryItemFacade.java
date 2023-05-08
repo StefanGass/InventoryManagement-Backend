@@ -121,7 +121,7 @@ public class InventoryItemFacade {
                 byte[] decodedImg = Base64.getDecoder()
                         .decode(toDecode.getBytes(StandardCharsets.UTF_8));
                 LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-                DateTimeFormatter dtf = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+                DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");//ISO_LOCAL_DATE_TIME;
                 String destinationFolder;
                 if (fileEnding.equals("pdf")) {
                     destinationFolder = "src/main/resources/documents/" + item.getItemInternalNumber() + "/";
