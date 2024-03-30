@@ -10,94 +10,114 @@ CREATE DATABASE IF NOT EXISTS usermanagement;
 GRANT ALL PRIVILEGES ON *.* TO 'inventorymanagement'@'%';
 GRANT ALL PRIVILEGES ON *.* TO 'usermanagement'@'%';
 
+############################################################################
 
 USE usermanagement;
 
-DROP TABLE IF EXISTS user;
+# DROP TABLE IF EXISTS user;
+# DROP TABLE IF EXISTS team;
 
-CREATE TABLE user
+CREATE TABLE IF NOT EXISTS team
 (
-    `id`           int auto_increment primary key,
-    `first_name`   varchar(255),
-    `last_name`    varchar(255),
-    `mail_address` varchar(255),
-    `group_id`     int,
-    `team_leader`  boolean,
-    `admin`        boolean,
-    `super_admin`  boolean,
-    `last_login`   DATETIME,
-    `active`       boolean
+    `id`   INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(255)
 );
 
-INSERT into user
-values (1, 'Super', 'Admin', null, 1, 1, 1, 1, null, 1);
+CREATE TABLE IF NOT EXISTS user
+(
+    `id`                        INT AUTO_INCREMENT PRIMARY KEY,
+    `user_logon_name`           VARCHAR(255),
+    `first_name`                VARCHAR(255),
+    `last_name`                 VARCHAR(255),
+    `mail_address`              VARCHAR(255),
+    `team_id`                   INT,
+    `team_leader`               BOOLEAN,
+    `admin`                     BOOLEAN,
+    `super_admin`               BOOLEAN,
+    `last_login`                DATETIME,
+    `active`                    BOOLEAN,
+    `auth_user_management`      BOOLEAN,
+    `auth_inventory_management` BOOLEAN,
+
+    FOREIGN KEY (team_id)
+        REFERENCES team (id)
+        ON DELETE CASCADE
+);
+
+INSERT INTO team
+VALUES (1, 'Test-Gruppe');
+
+INSERT INTO user
+VALUES (1, 'Super Admin', 'Super', 'Admin', null, 1, true, true, true, null, true, false, false);
+
+############################################################################
 
 USE inventorymanagement;
 
-DROP TABLE IF EXISTS change_history;
-DROP TABLE IF EXISTS picture;
-DROP TABLE IF EXISTS inventory_item;
-DROP TABLE IF EXISTS department_member;
-DROP TABLE IF EXISTS printer;
-DROP TABLE IF EXISTS department;
-DROP TABLE IF EXISTS supplier;
-DROP TABLE IF EXISTS location;
-DROP TABLE IF EXISTS type;
-DROP TABLE IF EXISTS category;
+# DROP TABLE IF EXISTS change_history;
+# DROP TABLE IF EXISTS picture;
+# DROP TABLE IF EXISTS inventory_item;
+# DROP TABLE IF EXISTS department_member;
+# DROP TABLE IF EXISTS printer;
+# DROP TABLE IF EXISTS department;
+# DROP TABLE IF EXISTS supplier;
+# DROP TABLE IF EXISTS location;
+# DROP TABLE IF EXISTS type;
+# DROP TABLE IF EXISTS category;
 
-CREATE TABLE category
+CREATE TABLE IF NOT EXISTS category
 (
-    `id`            int auto_increment primary key,
-    `category_name` varchar(255),
-    `prefix`        varchar(10)
+    `id`            INT AUTO_INCREMENT PRIMARY KEY,
+    `category_name` VARCHAR(255),
+    `prefix`        VARCHAR(10)
 );
 
-CREATE TABLE `type`
+CREATE TABLE IF NOT EXISTS `type`
 (
-    `id`          int auto_increment primary key,
-    `type_name`   varchar(255),
-    `category_id` int,
+    `id`          INT AUTO_INCREMENT PRIMARY KEY,
+    `type_name`   VARCHAR(255),
+    `category_id` INT,
 
     FOREIGN KEY (`category_id`)
         REFERENCES category (`id`)
         ON DELETE CASCADE
 );
 
-CREATE TABLE location
+CREATE TABLE IF NOT EXISTS location
 (
-    `id`            int auto_increment primary key,
-    `location_name` varchar(255)
+    `id`            INT AUTO_INCREMENT PRIMARY KEY,
+    `location_name` VARCHAR(255)
 );
 
-CREATE TABLE supplier
+CREATE TABLE IF NOT EXISTS supplier
 (
-    `id`            int auto_increment primary key,
-    `supplier_name` varchar(255),
-    `link`          varchar(255)
+    `id`            INT AUTO_INCREMENT PRIMARY KEY,
+    `supplier_name` VARCHAR(255),
+    `link`          VARCHAR(255)
 );
 
-CREATE TABLE department
+CREATE TABLE IF NOT EXISTS department
 (
-    `id`              int auto_increment primary key,
-    `department_name` varchar(255)
+    `id`              INT AUTO_INCREMENT PRIMARY KEY,
+    `department_name` VARCHAR(255)
 );
 
-CREATE TABLE printer
+CREATE TABLE IF NOT EXISTS printer
 (
-    `id`            int auto_increment primary key,
-    `printer_name`  varchar(255),
-    `printer_model` varchar(255),
-    `printer_ip`    varchar(255),
-    `label_format`  varchar(255)
+    `id`            INT AUTO_INCREMENT PRIMARY KEY,
+    `printer_name`  VARCHAR(255),
+    `printer_model` VARCHAR(255),
+    `printer_ip`    VARCHAR(255),
+    `label_format`  VARCHAR(255)
 );
 
-CREATE TABLE department_member
+CREATE TABLE IF NOT EXISTS department_member
 (
-    `id`                int auto_increment primary key,
-    `user_id`           int,
-    `department_id`     int,
-    `dropping_reviewer` boolean,
-    `printer_id`        int,
+    `id`                INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id`           INT,
+    `department_id`     INT,
+    `dropping_reviewer` BOOLEAN,
+    `printer_id`        INT,
 
     FOREIGN KEY (department_id)
         REFERENCES department (id)
@@ -108,30 +128,34 @@ CREATE TABLE department_member
         ON DELETE CASCADE
 );
 
-CREATE TABLE inventory_item
+CREATE TABLE IF NOT EXISTS inventory_item
 (
-    `id`                   int auto_increment primary key,
-    `item_internal_number` varchar(255),
-    `type_id`              int,
-    `item_name`            varchar(255),
-    `serial_number`        varchar(255),
-    `location_id`          int,
-    `supplier_id`          int,
-    `pieces`               int,
-    `pieces_stored`        int,
-    `pieces_issued`        int,
-    `pieces_dropped`       int,
-    `issued_to`            varchar(1275),
-    `delivery_date`        DATETIME,
-    `issue_date`           DATETIME,
-    `dropping_date`        DATETIME,
-    `dropping_reason`      varchar(1275),
-    `comments`             varchar(1275),
-    `status`               varchar(255),
-    `active`               boolean,
-    `dropping_queue`       boolean,
-    `department_id`        int,
-    `old_item_number`      varchar(255),
+    `id`                       INT AUTO_INCREMENT PRIMARY KEY,
+    `item_internal_number`     VARCHAR(255),
+    `type_id`                  INT,
+    `item_name`                VARCHAR(255),
+    `serial_number`            VARCHAR(255),
+    `location_id`              INT,
+    `supplier_id`              INT,
+    `pieces`                   INT,
+    `pieces_stored`            INT,
+    `pieces_issued`            INT,
+    `pieces_dropped`           INT,
+    `issued_to`                VARCHAR(1275),
+    `delivery_date`            DATETIME,
+    `issue_date`               DATETIME,
+    `dropping_date`            DATETIME,
+    `dropping_reason`          VARCHAR(1275),
+    `comments`                 VARCHAR(1275),
+    `status`                   VARCHAR(255),
+    `active`                   BOOLEAN,
+    `department_id`            INT,
+    `old_item_number`          VARCHAR(255),
+    `dropping_queue`           VARCHAR(100),
+    `dropping_queue_pieces`    INT,
+    `dropping_queue_reason`    VARCHAR(1275),
+    `dropping_queue_requester` INT,
+    `dropping_queue_date`      DATETIME,
 
     FOREIGN KEY (location_id)
         REFERENCES location (id)
@@ -150,56 +174,56 @@ CREATE TABLE inventory_item
         ON DELETE CASCADE
 );
 
-CREATE TABLE picture
+CREATE TABLE IF NOT EXISTS picture
 (
-    `id`            int auto_increment primary key,
-    `picture_url`   varchar(255),
-    `thumbnail_url` varchar(255),
-    `inventory_id`  int,
+    `id`            INT AUTO_INCREMENT PRIMARY KEY,
+    `picture_url`   VARCHAR(255),
+    `thumbnail_url` VARCHAR(255),
+    `inventory_id`  INT,
 
     FOREIGN KEY (inventory_id)
         REFERENCES inventory_item (id)
         ON DELETE CASCADE
 );
 
-CREATE TABLE change_history
+CREATE TABLE IF NOT EXISTS change_history
 (
-    `id`             int auto_increment primary key,
-    `user`           varchar(255),
+    `id`             INT AUTO_INCREMENT PRIMARY KEY,
+    `user`           VARCHAR(255),
     `change_date`    DATETIME,
-    `change_status`  varchar(255),
-    `change_history` varchar(2550),
-    `inventory_id`   int,
+    `change_status`  VARCHAR(255),
+    `change_history` VARCHAR(2550),
+    `inventory_id`   INT,
 
     FOREIGN KEY (inventory_id)
         REFERENCES inventory_item (id)
         ON DELETE CASCADE
 );
 
-INSERT into category
-values (1, 'Testcategory', 'TEST');
+INSERT INTO category
+VALUES (1, 'Testcategory', 'TEST');
 
-INSERT into type
-values (1, 'Testtype', 1);
+INSERT INTO type
+VALUES (1, 'Testtype', 1);
 
-INSERT into location
-values (1, 'Testlocation');
+INSERT INTO location
+VALUES (1, 'Testlocation');
 
-INSERT into supplier
-values (1, 'Testsupplier', 'https://www.testsupplier.net');
+INSERT INTO supplier
+VALUES (1, 'Testsupplier', 'https://www.testsupplier.at');
 
-INSERT into department
-values (1, 'Testdepartment');
+INSERT INTO department
+VALUES (1, 'Testdepartment');
 
-INSERT into printer
-values (1, 'TEST-1', 'QL-820NWB', 'tcp://192.168.0.5', '17x54');
+INSERT INTO printer
+VALUES (1, 'TEST-1', 'QL-820NWB', 'tcp://192.168.6.181', '17x54');
 
-INSERT into department_member
-values (1, 1, 1, true, 1);
+INSERT INTO department_member
+VALUES (1, 1, 1, true, 1);
 
-INSERT into inventory_item
-values (1, 'TEST-2022-0001', 1, 'test', 'ABC123', 1, 1, 11, 11, 0, 0, '', null, null, null, '', '', 'LAGERND', true,
-        false, 1, '');
+INSERT INTO inventory_item
+VALUES (1, 'TEST-2022-0001', 1, 'test', 'ABC123', 1, 1, 11, 11, 0, 0, '', null, null, null, '', '', 'LAGERND', true,
+        1, '', null, null, null, null, null);
 
-INSERT into change_history
-values (1, 1, '2022-08-18 10:17:26', 'Inventargegenstand angelegt.', 'Test test test', 1);
+INSERT INTO change_history
+VALUES (1, 1, '2022-08-18 10:17:26', 'Inventargegenstand angelegt.', 'Test test test', 1);

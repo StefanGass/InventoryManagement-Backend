@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 public interface PrinterRepository extends JpaRepository<Printer, Integer> {
 
     @Query(value = "SELECT * FROM printer p WHERE p.id = :id", nativeQuery = true)
-    Printer findByPrinterId(Integer id);
+    Printer findByPrinterId(int id);
 
     @Query(value = "SELECT * FROM printer p WHERE p.printer_name = :printerName", nativeQuery = true)
     Printer findByPrinterName(String printerName);

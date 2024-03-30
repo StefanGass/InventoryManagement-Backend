@@ -5,19 +5,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
-/**
- * User management repository.
- */
-
 @Repository
-public interface UserManagementRepository extends JpaRepository<User, Integer> {
+public interface UserRepository extends JpaRepository<User, Integer> {
 
     @Query(value = "SELECT * FROM user u WHERE u.id = :id", nativeQuery = true)
-    User findByUserId(Integer id);
+    User findByUserId(int id);
 
-    @Query(value = "SELECT * FROM user u WHERE u.group_id = :groupId", nativeQuery = true)
-    List<User> findByGroupId(Integer groupId);
+    @Query(value = "SELECT * FROM user u WHERE u.user_logon_name = :userLogonName", nativeQuery = true)
+    User findByUserLogonName(String userLogonName);
 
 }

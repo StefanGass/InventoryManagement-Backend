@@ -1,7 +1,9 @@
 package net.inventorymanagement.inventorymanagementwebservice;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,7 +18,14 @@ import static org.hamcrest.Matchers.is;
 import static org.springframework.test.util.AssertionErrors.assertEquals;
 
 @SpringBootTest
+@TestPropertySource(locations="classpath:application.properties")
 class InventoryManagementWebserviceApplicationTests {
+
+    @Value("${path.to.resources.folder}")
+    private String pathToResourcesFolder;
+
+    @Value("${path.to.test.resources.folder}")
+    private String pathToTestResourcesFolder;
 
     @Test
     void contextLoads() {
@@ -24,9 +33,7 @@ class InventoryManagementWebserviceApplicationTests {
 
     @Test
     void tryToImportPythonPackages() throws Exception {
-        // path working if started from terminal
-        // intellij needs the following path instead "inventoryManagementWebservice/src/test/resources/test_imports.py"
-        ProcessBuilder processBuilder = new ProcessBuilder("python3", "src/test/resources/test_imports.py");
+        ProcessBuilder processBuilder = new ProcessBuilder("python3", pathToTestResourcesFolder + "test_imports.py");
         processBuilder.redirectErrorStream(true);
 
         Process process = processBuilder.start();
@@ -36,9 +43,7 @@ class InventoryManagementWebserviceApplicationTests {
 
     @Test
     void tryToProcessPythonScript() throws Exception {
-        // path working if started from terminal
-        // intellij needs the following path instead: "inventoryManagementWebservice/src/main/resources/generate_qr.py"
-        ProcessBuilder processBuilder = new ProcessBuilder("python3", "src/main/resources/generate_qr.py", "-1", "TEST-2022-0001");
+        ProcessBuilder processBuilder = new ProcessBuilder("python3", pathToResourcesFolder+ "generate_qr.py", "-1", "TEST-2022-0001");
         processBuilder.redirectErrorStream(true);
 
         Process process = processBuilder.start();

@@ -1,18 +1,38 @@
 package net.inventorymanagement.inventorymanagementwebservice.utils;
 
 import net.inventorymanagement.inventorymanagementwebservice.model.InventoryItem;
+import lombok.extern.log4j.Log4j2;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
+@Log4j2
 public class ItemComparator {
 
     public static String getChangeString(InventoryItem originalItem, InventoryItem newItem, int pictureCounter) {
         StringBuilder sb = new StringBuilder();
-        if (!originalItem.getItemName().equals(newItem.getItemName())) {
+
+        if (!originalItem.getPiecesDropped().equals(newItem.getPiecesDropped())) {
+            // dropping parameters will only be changed if someone approves it, so this does not need additional verification
+            sb.append("Ausscheidung bestätigt: ");
+        }
+
+            if (!originalItem.getItemName().equals(newItem.getItemName())) {
             sb.append("Beschreibung: {");
             sb.append(checkIfEmpty(originalItem.getItemName()));
             sb.append("} -> {");
             sb.append(checkIfEmpty(newItem.getItemName()));
+            sb.append("}, ");
+        }
+        if (!originalItem.getOldItemNumber().equals(newItem.getOldItemNumber())) {
+            if (!sb.isEmpty()) {
+                sb.append("alte Inventarnummer: {");
+            } else {
+                sb.append("Alte Inventarnummer {");
+            }
+            sb.append(originalItem.getOldItemNumber());
+            sb.append("} -> {");
+            sb.append(newItem.getOldItemNumber());
             sb.append("}, ");
         }
         if (!originalItem.getSerialNumber().equals(newItem.getSerialNumber())) {
@@ -89,7 +109,7 @@ public class ItemComparator {
             sb.append("}, ");
         }
         if (!originalItem.getIssuedTo().equals(newItem.getIssuedTo())) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append("ausgegeben an: {");
             } else {
                 sb.append("Ausgegeben an: {");
@@ -110,7 +130,7 @@ public class ItemComparator {
         }
         if (originalItem.getDroppingDate() != null && newItem.getDroppingDate() != null) {
             if (!originalItem.getDroppingDate().toLocalDate().isEqual(newItem.getDroppingDate().toLocalDate())) {
-                getDateString("Ausscheidedatum:", sb, originalItem.getIssueDate().toLocalDate(), newItem.getIssueDate().toLocalDate());
+                getDateString("Ausscheidedatum:", sb, originalItem.getDroppingDate().toLocalDate(), newItem.getDroppingDate().toLocalDate());
             }
         } else if (originalItem.getDroppingDate() != null) {
             getDateString("Ausscheidedatum:", sb, originalItem.getDroppingDate().toLocalDate(), null);
@@ -124,17 +144,6 @@ public class ItemComparator {
             sb.append(checkIfEmpty(newItem.getDroppingReason()));
             sb.append("}, ");
         }
-        if (!originalItem.getOldItemNumber().equals(newItem.getOldItemNumber())) {
-            if (sb.length() > 0) {
-                sb.append("alte Inventarnummer: {");
-            } else {
-                sb.append("Alte Inventarnummer {");
-            }
-            sb.append(originalItem.getOldItemNumber());
-            sb.append("} -> {");
-            sb.append(newItem.getOldItemNumber());
-            sb.append("}, ");
-        }
         if (!originalItem.getComments().equals(newItem.getComments())) {
             sb.append("Anmerkungen: {");
             sb.append(checkIfEmpty(originalItem.getComments()));
@@ -145,14 +154,46 @@ public class ItemComparator {
         if (pictureCounter > 0) {
             sb.append("Bilder / Dokumente hinzugefügt: {").append(pictureCounter).append("}  ");
         }
-        if (sb.length() > 0) {
+
+        if (!Objects.equals(originalItem.getDroppingQueue(), newItem.getDroppingQueue())) {
+            if (DroppingQueueEnum.AUSSCHEIDEN.toString().equals(newItem.getDroppingQueue())) {
+                sb.append("Ausscheidung angefordert: ");
+                sb.append("Stückzahl: {");
+                sb.append(newItem.getDroppingQueuePieces());
+                sb.append("}, ");
+                sb.append("Ausscheidegrund: {");
+                sb.append(newItem.getDroppingQueueReason());
+                sb.append("}, ");
+                sb.append("Ausscheidedatum: {");
+                sb.append(newItem.getDroppingQueueDate().toLocalDate());
+                sb.append("}, ");
+            } else if (DroppingQueueEnum.AUSSCHEIDEN.toString().equals(originalItem.getDroppingQueue()) &&
+                    Objects.equals(originalItem.getPiecesDropped(), newItem.getPiecesDropped())) {
+                sb.append("Ausscheidung abgelehnt.  ");
+            } else if (DroppingQueueEnum.DEAKTIVIEREN.toString().equals(newItem.getDroppingQueue())) {
+                sb.append("Deaktivierung angefordert: ");
+                sb.append("Stückzahl: {");
+                sb.append(newItem.getDroppingQueuePieces());
+                sb.append("}, ");
+                sb.append("Deaktivierungsgrund: {");
+                sb.append(newItem.getDroppingQueueReason());
+                sb.append("}, ");
+                sb.append("Deaktivierungsdatum: {");
+                sb.append(LocalDate.now());
+                sb.append("}, ");
+            } else if (DroppingQueueEnum.DEAKTIVIEREN.toString().equals(originalItem.getDroppingQueue())) {
+                sb.append("Deaktivierung abgelehnt.  ");
+            }
+        }
+
+        if (!sb.isEmpty()) {
             sb.setLength(sb.length() - 2);
         }
         return sb.toString();
     }
 
     private static String checkIfEmpty(String string) {
-        if (string == null || string.equals("")) {
+        if (string == null || string.isEmpty()) {
             return "leer";
         } else {
             return string;

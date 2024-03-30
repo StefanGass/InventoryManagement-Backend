@@ -1,12 +1,13 @@
 package net.inventorymanagement.inventorymanagementwebservice.model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -52,11 +53,25 @@ public class InventoryItem implements Comparable<InventoryItem>, Cloneable {
     @ToString.Exclude
     private List<Change> change;
     private boolean active;
-    private boolean droppingQueue;
+    private String droppingQueue;
+    private Integer droppingQueuePieces;
+    private String droppingQueueReason;
+    private Integer droppingQueueRequester;
+    private LocalDateTime droppingQueueDate;
     @OneToOne
     @JoinColumn(name = "department_id")
     private Department department;
     private String oldItemNumber;
+
+    public Change getFirstChange() {
+        return this.change.stream().min(Comparator.comparing(Change::getChangeDate))
+                .orElseThrow(IllegalArgumentException::new);
+    }
+
+    public Change getLastChange() {
+        return this.change.stream().max(Comparator.comparing(Change::getChangeDate))
+                .orElseThrow(IllegalArgumentException::new);
+    }
 
     public InventoryItem clone() throws CloneNotSupportedException {
         return (InventoryItem) super.clone();

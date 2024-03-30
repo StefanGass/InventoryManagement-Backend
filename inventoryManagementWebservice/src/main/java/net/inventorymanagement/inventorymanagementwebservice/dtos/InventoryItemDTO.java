@@ -32,15 +32,23 @@ public class InventoryItemDTO implements Comparable<InventoryItemDTO> {
     private LocalDateTime issueDate;
     private LocalDateTime droppingDate;
     private String status;
+    private LocalDateTime creationDate;
     private LocalDateTime lastChangedDate;
     private boolean active;
+    private String droppingQueue;
     private Department department;
     private String oldItemNumber;
 
     public InventoryItemDTO() {
     }
 
-    public InventoryItemDTO(Integer id, String itemInternalNumber, Type type, String itemName, String serialNumber, Supplier supplier, Location location, Integer pieces, Integer piecesStored, Integer piecesIssued, Integer piecesDropped, String issuedTo, LocalDateTime deliveryDate, LocalDateTime issueDate, LocalDateTime droppingDate, String status, LocalDateTime lastChangedDate, boolean active, Department department, String oldItemNumber) {
+    public InventoryItemDTO(Integer id, String itemInternalNumber, Type type, String itemName,
+                            String serialNumber, Supplier supplier, Location location,
+                            Integer pieces, Integer piecesStored, Integer piecesIssued,
+                            Integer piecesDropped, String issuedTo, LocalDateTime deliveryDate,
+                            LocalDateTime issueDate, LocalDateTime droppingDate, String status,
+                            LocalDateTime creationDate, LocalDateTime lastChangedDate, boolean active,
+                            Department department, String oldItemNumber, String droppingQueue) {
         this.id = id;
         this.itemInternalNumber = itemInternalNumber;
         this.type = type;
@@ -57,10 +65,12 @@ public class InventoryItemDTO implements Comparable<InventoryItemDTO> {
         this.issueDate = issueDate;
         this.droppingDate = droppingDate;
         this.status = status;
+        this.creationDate = creationDate;
         this.lastChangedDate = lastChangedDate;
         this.active = active;
         this.department = department;
         this.oldItemNumber = oldItemNumber;
+        this.droppingQueue = droppingQueue;
     }
 
     public InventoryItemDTO(InventoryItemDTO dto) {
@@ -81,10 +91,12 @@ public class InventoryItemDTO implements Comparable<InventoryItemDTO> {
         this.issueDate = dto.getIssueDate();
         this.droppingDate = dto.getDroppingDate();
         this.status = dto.getStatus();
+        this.creationDate = dto.getCreationDate();
         this.lastChangedDate = dto.getLastChangedDate();
         this.active = dto.isActive();
         this.department = dto.getDepartment();
         this.oldItemNumber = dto.getOldItemNumber();
+        this.droppingQueue = dto.getDroppingQueue();
     }
 
     @Override

@@ -4,5 +4,6 @@ public enum StatusEnum {
     LAGERND,
     AUSGEGEBEN,
     AUSGESCHIEDEN,
-    VERTEILT
+    VERTEILT,
+    DEAKTIVIERT
 }

@@ -8,6 +8,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface LocationRepository extends JpaRepository<Location, Integer> {
 
+    @Query(value = "SELECT * FROM location l WHERE l.id = :id", nativeQuery = true)
+    Location findByLocationId(int id);
+
     @Query(value = "SELECT * FROM location l WHERE l.location_name = :locationName", nativeQuery = true)
     Location findByLocationName(String locationName);
 

@@ -5,7 +5,11 @@ import net.inventorymanagement.inventorymanagementwebservice.dtos.InventoryItemD
 import net.inventorymanagement.inventorymanagementwebservice.model.*;
 import net.inventorymanagement.inventorymanagementwebservice.service.InventoryManagementService;
 import net.inventorymanagement.inventorymanagementwebservice.utils.StatusEnum;
+import net.inventorymanagement.inventorymanagementwebservice.utils.ThumbnailGenerator;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
@@ -18,15 +22,28 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
 @Component
+@Log4j2
 public class InventoryItemFacade {
 
+    @Value("${path.to.documents.folder}")
+    private String pathToDocumentsFolder;
+
+    @Value("${path.to.pictures.folder}")
+    private String pathToPicturesFolder;
+
+    @Value("${path.to.thumbnails.folder}")
+    private String pathToThumbnailsFolder;
+
+    private final InventoryManagementService inventoryManagementService;
+
     @Autowired
-    private InventoryManagementService inventoryManagementService;
+    public InventoryItemFacade(InventoryManagementService inventoryManagementService) {
+        this.inventoryManagementService = inventoryManagementService;
+    }
 
     public InventoryItemDTO mapModelToDTO(InventoryItem model) {
         InventoryItemDTO inventoryItemDTO = new InventoryItemDTO();
@@ -47,8 +64,10 @@ public class InventoryItemFacade {
         inventoryItemDTO.setDroppingDate(model.getDroppingDate());
         inventoryItemDTO.setStatus(model.getStatus());
         inventoryItemDTO.setDepartment(model.getDepartment());
+        inventoryItemDTO.setDroppingQueue(model.getDroppingQueue());
         if (model.getChange() != null) {
-            model.getChange().stream().max(Comparator.comparing(Change::getChangeDate)).ifPresent(lastChange -> inventoryItemDTO.setLastChangedDate(lastChange.getChangeDate()));
+            inventoryItemDTO.setCreationDate(model.getFirstChange().getChangeDate());
+            inventoryItemDTO.setLastChangedDate(model.getLastChange().getChangeDate());
         }
         inventoryItemDTO.setActive(model.isActive());
         inventoryItemDTO.setOldItemNumber(model.getOldItemNumber());
@@ -57,8 +76,11 @@ public class InventoryItemFacade {
 
     public DetailInventoryItemDTO mapModelToDetailDTO(InventoryItem model) {
         InventoryItemDTO item = mapModelToDTO(model);
-        List<Picture> base64List = parseBase64(model.getPictures());
-        return new DetailInventoryItemDTO(item, model.getDroppingReason(), model.getComments(), base64List, model.getChange());
+        List<Picture> base64List = parseBase64WithThumbnail(model.getPictures());
+        return new DetailInventoryItemDTO(item, model.getDroppingReason(), model.getComments(),
+                base64List, model.getChange(), model.getDroppingQueuePieces(),
+                model.getDroppingQueueReason(), model.getDroppingQueueRequester(),
+                model.getDroppingQueueDate());
     }
 
     public InventoryItem mapDTOToModel(DetailInventoryItemDTO inventoryItemDTO, InventoryItem savedModel) {
@@ -91,16 +113,24 @@ public class InventoryItemFacade {
         inventoryItem.setStatus(createStatus(inventoryItemDTO));
         inventoryItem.setActive(true);
         inventoryItem.setOldItemNumber(inventoryItemDTO.getOldItemNumber());
+        inventoryItem.setDroppingQueue(inventoryItemDTO.getDroppingQueue());
+        inventoryItem.setDroppingQueueDate(inventoryItemDTO.getDroppingQueueDate());
+        inventoryItem.setDroppingQueuePieces(inventoryItemDTO.getDroppingQueuePieces());
+        inventoryItem.setDroppingQueueReason(inventoryItemDTO.getDroppingQueueReason());
+        inventoryItem.setDroppingQueueRequester(inventoryItemDTO.getDroppingQueueRequester());
         return inventoryItem;
     }
 
     private String createStatus(InventoryItemDTO item) {
+        boolean active = item.isActive();
         Integer pieces = item.getPieces();
         Integer piecesDropped = item.getPiecesDropped();
         Integer piecesIssued = item.getPiecesIssued();
         Integer piecesStored = item.getPiecesStored();
 
-        if (Objects.equals(pieces, piecesDropped)) {
+        if (!active) {
+            return StatusEnum.DEAKTIVIERT.name();
+        } else if (Objects.equals(pieces, piecesDropped)) {
             return StatusEnum.AUSGESCHIEDEN.name();
         } else if (Objects.equals(pieces, piecesIssued)) {
             return StatusEnum.AUSGEGEBEN.name();
@@ -112,7 +142,7 @@ public class InventoryItemFacade {
     }
 
     public void savePictures(List<Picture> pictures, InventoryItem item, boolean transferProtocol) throws IOException {
-        if (pictures != null && pictures.size() > 0) {
+        if (pictures != null && !pictures.isEmpty()) {
             for (int i = 0; i < pictures.size(); i++) {
                 Picture current = pictures.get(i);
                 String[] splitUrl = current.getPictureUrl().split(",");
@@ -124,9 +154,9 @@ public class InventoryItemFacade {
                 DateTimeFormatter dtf = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
                 String destinationFolder;
                 if (fileEnding.equals("pdf")) {
-                    destinationFolder = "src/main/resources/documents/" + item.getItemInternalNumber() + "/";
+                    destinationFolder = pathToDocumentsFolder + item.getItemInternalNumber() + "/";
                 } else {
-                    destinationFolder = "src/main/resources/pictures/" + item.getItemInternalNumber() + "/";
+                    destinationFolder = pathToPicturesFolder + item.getItemInternalNumber() + "/";
                 }
                 String destinationFile;
                 if (transferProtocol) {
@@ -143,7 +173,7 @@ public class InventoryItemFacade {
                     try (FileOutputStream fos = new FileOutputStream(f)) {
                         fos.write(decodedImg);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        log.error(e.getMessage());
                     } finally {
                         inventoryManagementService.addPicture(current);
                     }
@@ -151,8 +181,12 @@ public class InventoryItemFacade {
                     try {
                         BufferedImage img = ImageIO.read(new ByteArrayInputStream(decodedImg));
                         ImageIO.write(img, fileEnding, f);
+                        String thumbnailFolder = pathToThumbnailsFolder + item.getItemInternalNumber() + "/";
+                        Files.createDirectories(Path.of(thumbnailFolder));
+                        String thumbnailFile = new ThumbnailGenerator().generateThumbnail(f, thumbnailFolder);
+                        current.setThumbnailUrl(thumbnailFile);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        log.error(e.getMessage());
                     } finally {
                         inventoryManagementService.addPicture(current);
                     }
@@ -175,45 +209,79 @@ public class InventoryItemFacade {
         }
     }
 
-    public List<Picture> parseBase64(List<Picture> pictures) {
+    public List<Picture> parseBase64WithThumbnail(List<Picture> pictures) {
         return pictures.stream().map(picture -> {
             File f = new File(picture.getPictureUrl());
             String fileType = getFileType(picture.getPictureUrl());
             String imageString;
-            if (fileType.equals("pdf")) {
-                imageString = "data:application/pdf;base64,";
-            } else {
-                imageString = "data:image/" + fileType + ";base64,";
+            imageString = getBaseImageString(fileType);
+
+            if (StringUtils.isNotEmpty(picture.getThumbnailUrl())) {
+                f = new File(picture.getThumbnailUrl());
             }
 
-            try (FileInputStream fileInputStreamReader = new FileInputStream(f)) {
-
-                // get byte array from image stream
-                int bufLength = 2048;
-                byte[] buffer = new byte[2048];
-                byte[] data;
-
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                int readLength;
-                while ((readLength = fileInputStreamReader.read(buffer, 0, bufLength)) != -1) {
-                    out.write(buffer, 0, readLength);
-                }
-                data = out.toByteArray();
-                imageString += Base64.getEncoder().withoutPadding().encodeToString(data);
-
-                out.close();
-                fileInputStreamReader.close();
-                System.out.println("Encode Image Result : " + imageString);
-
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            Picture pictureFinal = new Picture();
-            pictureFinal.setPictureUrl(imageString);
-            pictureFinal.setInventoryItem(picture.getInventoryItem());
-            pictureFinal.setId(picture.getId());
-            return pictureFinal;
+            return convertPicture(picture, f, imageString, true);
         }).toList();
+    }
+
+    private Picture convertPicture(Picture picture, File f, String imageString,
+                                   boolean useThumbnail) {
+        imageString = readFileBase64(f, imageString);
+        Picture pictureFinal = new Picture();
+
+        if (StringUtils.isNotEmpty(picture.getThumbnailUrl()) && useThumbnail) {
+            pictureFinal.setThumbnailUrl(imageString);
+        } else {
+            pictureFinal.setPictureUrl(imageString);
+        }
+        pictureFinal.setInventoryItem(picture.getInventoryItem());
+        pictureFinal.setId(picture.getId());
+        return pictureFinal;
+    }
+
+    private static String getBaseImageString(String fileType) {
+        String imageString;
+        if (fileType.equals("pdf")) {
+            imageString = "data:application/pdf;base64,";
+        } else {
+            imageString = "data:image/" + fileType + ";base64,";
+
+        }
+        return imageString;
+    }
+
+    public Picture parseBase64WithoutThumbnail(Picture picture) {
+
+        File f = new File(picture.getPictureUrl());
+        String fileType = getFileType(picture.getPictureUrl());
+        String imageString;
+
+        imageString = getBaseImageString(fileType);
+        return convertPicture(picture, f, imageString, false);
+    }
+
+    private String readFileBase64(File f, String imageString) {
+        try (FileInputStream fileInputStreamReader = new FileInputStream(f)) {
+
+            // get byte array from image stream
+            int bufLength = 2048;
+            byte[] buffer = new byte[2048];
+            byte[] data;
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            int readLength;
+            while ((readLength = fileInputStreamReader.read(buffer, 0, bufLength)) != -1) {
+                out.write(buffer, 0, readLength);
+            }
+            data = out.toByteArray();
+            imageString += Base64.getEncoder().withoutPadding().encodeToString(data);
+
+            out.close();
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return imageString;
     }
 
 }

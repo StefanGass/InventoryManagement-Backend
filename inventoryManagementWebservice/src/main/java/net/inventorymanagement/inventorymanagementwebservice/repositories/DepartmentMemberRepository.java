@@ -9,6 +9,6 @@ import org.springframework.stereotype.Repository;
 public interface DepartmentMemberRepository extends JpaRepository<DepartmentMember, Integer> {
 
     @Query(value = "SELECT * FROM department_member d WHERE d.user_id = :userId", nativeQuery = true)
-    DepartmentMember findByUserId(Integer userId);
+    DepartmentMember findByUserId(int userId);
 
 }

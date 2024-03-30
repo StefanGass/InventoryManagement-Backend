@@ -1,12 +1,11 @@
 package net.inventorymanagement.inventorymanagementwebservice.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-
-import javax.persistence.*;
 
 @Entity
 @Table(name = "department_member")

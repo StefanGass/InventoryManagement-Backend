@@ -3,46 +3,50 @@ package net.inventorymanagement.inventorymanagementwebservice.service;
 import net.inventorymanagement.inventorymanagementwebservice.dtos.ChartItemDTO;
 import net.inventorymanagement.inventorymanagementwebservice.model.*;
 import net.inventorymanagement.inventorymanagementwebservice.repositories.*;
+import net.inventorymanagement.inventorymanagementwebservice.utils.DroppingQueueEnum;
 import net.inventorymanagement.inventorymanagementwebservice.utils.PythonExecutor;
+import net.inventorymanagement.inventorymanagementwebservice.utils.StatusEnum;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
+@Log4j2
 public class InventoryManagementService {
 
-    @Autowired
-    private InventoryItemRepository inventoryItemRepository;
+    @Value("${path.to.resources.folder}")
+    private String pathToResourcesFolder;
+
+    private final InventoryItemRepository inventoryItemRepository;
+    private final TypeRepository typeRepository;
+    private final CategoryRepository categoryRepository;
+    private final LocationRepository locationRepository;
+    private final SupplierRepository supplierRepository;
+    private final PictureRepository pictureRepository;
+    private final DepartmentRepository departmentRepository;
+    private final DepartmentMemberRepository departmentMemberRepository;
+    private final PrinterRepository printerRepository;
+    private final ChangeRepository changeRepository;
 
     @Autowired
-    private TypeRepository typeRepository;
-
-    @Autowired
-    private CategoryRepository categoryRepository;
-
-    @Autowired
-    private LocationRepository locationRepository;
-
-    @Autowired
-    private SupplierRepository supplierRepository;
-
-    @Autowired
-    private PictureRepository pictureRepository;
-
-    @Autowired
-    private DepartmentRepository departmentRepository;
-
-    @Autowired
-    private DepartmentMemberRepository departmentMemberRepository;
-
-    @Autowired
-    private PrinterRepository printerRepository;
-
-    @Autowired
-    private ChangeRepository changeRepository;
+    public InventoryManagementService(InventoryItemRepository inventoryItemRepository, TypeRepository typeRepository, CategoryRepository categoryRepository, LocationRepository locationRepository, SupplierRepository supplierRepository, PictureRepository pictureRepository, DepartmentRepository departmentRepository, DepartmentMemberRepository departmentMemberRepository, PrinterRepository printerRepository, ChangeRepository changeRepository) {
+        this.inventoryItemRepository = inventoryItemRepository;
+        this.typeRepository = typeRepository;
+        this.categoryRepository = categoryRepository;
+        this.locationRepository = locationRepository;
+        this.supplierRepository = supplierRepository;
+        this.pictureRepository = pictureRepository;
+        this.departmentRepository = departmentRepository;
+        this.departmentMemberRepository = departmentMemberRepository;
+        this.printerRepository = printerRepository;
+        this.changeRepository = changeRepository;
+    }
 
     // ####################### Inventory #######################
 
@@ -52,8 +56,8 @@ public class InventoryManagementService {
         return itemList;
     }
 
-    public InventoryItem getInventoryItemById(String id) {
-        return inventoryItemRepository.findByItemId(Integer.valueOf(id));
+    public InventoryItem getInventoryItemById(int id) {
+        return inventoryItemRepository.findByItemId(id);
     }
 
     public InventoryItem getInventoryItemByInternalNumber(String internalNumber) {
@@ -76,25 +80,36 @@ public class InventoryManagementService {
         return inventoryItemRepository.save(checkIfInventoryItemAlreadyExists(model));
     }
 
-    public InventoryItem deactivateInventoryItem(String id) throws Exception {
-        InventoryItem inventoryItemToDeactivate = getInventoryItemById(id);
-        if (inventoryItemToDeactivate.isActive()) {
-            inventoryItemToDeactivate.setActive(false);
-        } else {
-            throw new Exception("Der Inventargegenstand \"" + inventoryItemToDeactivate.getItemInternalNumber() + "\" ist bereits inaktiv gesetzt.");
-        }
-        return inventoryItemRepository.save(inventoryItemToDeactivate);
+    public void revokeDroppingInventoryItem(InventoryItem inventoryItem) {
+        resetDroppingQueueParameters(inventoryItem);
+        inventoryItemRepository.saveAndFlush(inventoryItem);
     }
 
+    public InventoryItem deactivateInventoryItem(int id) throws Exception {
+        InventoryItem inventoryItemToDeactivate = inventoryItemRepository.findByItemId(id);
+        if (!inventoryItemToDeactivate.isActive()) {
+            throw new Exception("Der Inventargegenstand \"" + inventoryItemToDeactivate.getItemInternalNumber() + "\" ist bereits deaktiviert.");
+        }
+        if (!DroppingQueueEnum.DEAKTIVIEREN.toString().equals(inventoryItemToDeactivate.getDroppingQueue())) {
+            throw new Exception("Für den Inventargegenstand \"" +
+                    inventoryItemToDeactivate.getItemInternalNumber() +
+                    "\" ist keine Deaktivierung angefordert.");
+        }
+        inventoryItemToDeactivate.setActive(false);
+        inventoryItemToDeactivate.setStatus(StatusEnum.DEAKTIVIERT.name());
+        resetDroppingQueueParameters(inventoryItemToDeactivate);
+        return inventoryItemRepository.saveAndFlush(inventoryItemToDeactivate);
+    }
 
-    public InventoryItem activateInventoryItem(String id) throws Exception {
-        InventoryItem inventoryItemToActivate = getInventoryItemById(id);
+    public InventoryItem activateInventoryItem(int id) throws Exception {
+        InventoryItem inventoryItemToActivate = inventoryItemRepository.findByItemId(id);
         if (!inventoryItemToActivate.isActive()) {
             inventoryItemToActivate.setActive(true);
+            inventoryItemToActivate.setStatus(getItemStatus(inventoryItemToActivate));
         } else {
-            throw new Exception("Der Inventargegenstand \"" + inventoryItemToActivate.getItemInternalNumber() + "\" ist bereits aktiv gesetzt.");
+            throw new Exception("Der Inventargegenstand \"" + inventoryItemToActivate.getItemInternalNumber() + "\" ist bereits aktiviert.");
         }
-        return inventoryItemRepository.save(inventoryItemToActivate);
+        return inventoryItemRepository.saveAndFlush(inventoryItemToActivate);
     }
 
     private InventoryItem checkIfInventoryItemAlreadyExists(InventoryItem item) throws Exception {
@@ -135,7 +150,7 @@ public class InventoryManagementService {
     }
 
     public void addPicture(Picture model) {
-        pictureRepository.save(model);
+        pictureRepository.saveAndFlush(model);
     }
 
     public Location getLocationByName(String locationName) {
@@ -154,6 +169,168 @@ public class InventoryManagementService {
         return departmentRepository.findByDepartmentName(departmentName);
     }
 
+    private void resetDroppingQueueParameters(InventoryItem inventoryItem) {
+        inventoryItem.setDroppingQueue(null);
+        inventoryItem.setDroppingQueuePieces(null);
+        inventoryItem.setDroppingQueueReason(null);
+        inventoryItem.setDroppingQueueRequester(null);
+        inventoryItem.setDroppingQueueDate(null);
+    }
+
+    private String getItemStatus(InventoryItem item) {
+        boolean active = item.isActive();
+        Integer pieces = item.getPieces();
+        Integer piecesDropped = item.getPiecesDropped();
+        Integer piecesIssued = item.getPiecesIssued();
+        Integer piecesStored = item.getPiecesStored();
+
+        if (!active) {
+            return StatusEnum.DEAKTIVIERT.name();
+        } else if (Objects.equals(pieces, piecesDropped)) {
+            return StatusEnum.AUSGESCHIEDEN.name();
+        } else if (Objects.equals(pieces, piecesIssued)) {
+            return StatusEnum.AUSGEGEBEN.name();
+        } else if (Objects.equals(pieces, piecesStored)) {
+            return StatusEnum.LAGERND.name();
+        } else {
+            return StatusEnum.VERTEILT.name();
+        }
+    }
+
+    // ####################### Search #######################
+
+    public List<InventoryItem> quickSearchAllDepartments(String search) {
+        String[] searchTerms = splitSearchStringBySpace(search);
+        Map<InventoryItem, Integer> itemCountMap = new HashMap<>();
+        for (String term : searchTerms) {
+            List<InventoryItem> items = inventoryItemRepository.findBySearchString(term);
+            for (InventoryItem item : items) {
+                itemCountMap.put(item, itemCountMap.getOrDefault(item, 0) + 1);
+            }
+        }
+        return convertMapToListAndSort(itemCountMap);
+    }
+
+    public List<InventoryItem> quickSearchByDepartment(String search, int departmentId) {
+        String[] searchTerms = splitSearchStringBySpace(search);
+        Map<InventoryItem, Integer> itemCountMap = new HashMap<>();
+        for (String term : searchTerms) {
+            List<InventoryItem> items = inventoryItemRepository.findBySearchStringAndDepartmentId(term, departmentId);
+            for (InventoryItem item : items) {
+                itemCountMap.put(item, itemCountMap.getOrDefault(item, 0) + 1);
+            }
+        }
+        return convertMapToListAndSort(itemCountMap);
+    }
+
+    private static String[] splitSearchStringBySpace(String search) {
+        return Arrays.stream(search.split("\\s+")) // split by space
+                .filter(str -> str.length() > 1) // only include strings with more than one character
+                .toArray(String[]::new);
+    }
+
+    private static List<InventoryItem> convertMapToListAndSort(Map<InventoryItem, Integer> itemCountMap) {
+        List<Map.Entry<InventoryItem, Integer>> itemList = new ArrayList<>(itemCountMap.entrySet());
+        itemList.sort(Map.Entry.comparingByKey()); // sort by internal inventory number first
+        itemList.sort((entry1, entry2) -> { // then sort by hit counter
+            int countCompare = entry2.getValue().compareTo(entry1.getValue());
+            if (countCompare == 0) {
+                return ((Comparable<InventoryItem>) entry1.getKey()).compareTo(entry2.getKey());
+            }
+            return countCompare;
+        });
+        return itemList.stream().map(Map.Entry::getKey).collect(Collectors.toList());
+    }
+
+    // ####################### Export #######################
+
+    public String getFilterString(Integer departmentId, Integer categoryId, Integer typeId, Integer locationId, Integer supplierId, String status,
+                                  LocalDateTime creationDateFrom, LocalDateTime creationDateTo, LocalDateTime deliveryDateFrom, LocalDateTime deliveryDateTo,
+                                  LocalDateTime issueDateFrom, LocalDateTime issueDateTo, LocalDateTime droppingDateFrom, LocalDateTime droppingDateTo) {
+        StringBuilder sb = new StringBuilder();
+        if (departmentId != null) {
+            Department department = departmentRepository.findByDepartmentId(departmentId);
+            if (department != null) {
+                sb.append("Abteilung: ");
+                sb.append(department.getDepartmentName());
+                sb.append(", ");
+            }
+        }
+        if (categoryId != null) {
+            Category category = categoryRepository.findByCategoryId(categoryId);
+            if (category != null) {
+                sb.append("Kategorie: ");
+                sb.append(category.getCategoryName());
+                sb.append(", ");
+            }
+        }
+        if (typeId != null) {
+            Type type = typeRepository.findByTypeId(typeId);
+            if (type != null) {
+                sb.append("Typ: ");
+                sb.append(type.getTypeName());
+                sb.append(", ");
+            }
+        }
+        if (locationId != null) {
+            Location location = locationRepository.findByLocationId(locationId);
+            if (location != null) {
+                sb.append("Standort: ");
+                sb.append(location.getLocationName());
+                sb.append(", ");
+            }
+        }
+        if (supplierId != null) {
+            Supplier supplier = supplierRepository.findBySupplierId(supplierId);
+            if (supplier != null) {
+                sb.append("Lieferant: ");
+                sb.append(supplier.getSupplierName());
+                sb.append(", ");
+            }
+        }
+        if (status != null) {
+            sb.append("Status: ");
+            sb.append(status);
+            sb.append(", ");
+        }
+        if (creationDateFrom != null || creationDateTo != null) {
+            sb.append("Anlagedatum von ");
+            getDateRangeString(creationDateFrom, creationDateTo, sb);
+        }
+        if (deliveryDateFrom != null || deliveryDateTo != null) {
+            sb.append("Lieferdatum von ");
+            getDateRangeString(deliveryDateFrom, deliveryDateTo, sb);
+        }
+        if (issueDateFrom != null || issueDateTo != null) {
+            sb.append("Ausgabedatum von ");
+            getDateRangeString(issueDateFrom, issueDateTo, sb);
+        }
+        if (droppingDateFrom != null || droppingDateTo != null) {
+            sb.append("Ausscheidedatum von ");
+            getDateRangeString(droppingDateFrom, droppingDateTo, sb);
+        }
+        if (sb.toString().isEmpty()) {
+            return "-";
+        } else {
+            return sb.substring(0, sb.toString().length() - 2);
+        }
+    }
+
+    private void getDateRangeString(LocalDateTime fromDate, LocalDateTime toDate, StringBuilder sb) {
+        if (fromDate != null) {
+            sb.append(fromDate.toLocalDate());
+        } else {
+            sb.append("*");
+        }
+        sb.append(" bis ");
+        if (toDate != null) {
+            sb.append(toDate.toLocalDate());
+        } else {
+            sb.append("*");
+        }
+        sb.append(", ");
+    }
+
     // ####################### Type #######################
 
     public List<Type> getAllTypes() {
@@ -165,7 +342,7 @@ public class InventoryManagementService {
     public void addType(Type type) throws Exception {
         mergeCategoryWithTypeCategory(type);
         if (type.getCategory() != null) {
-            typeRepository.save(Objects.requireNonNull(checkIfTypeAlreadyExists(type)));
+            typeRepository.saveAndFlush(Objects.requireNonNull(checkIfTypeAlreadyExists(type)));
         }
     }
 
@@ -198,7 +375,7 @@ public class InventoryManagementService {
 
     public void addCategory(Category category) throws Exception {
         category.setPrefix(category.getPrefix().toUpperCase());
-        categoryRepository.save(Objects.requireNonNull(checkICategoryAlreadyExists(category)));
+        categoryRepository.saveAndFlush(Objects.requireNonNull(checkICategoryAlreadyExists(category)));
     }
 
     private Category checkICategoryAlreadyExists(Category category) throws Exception {
@@ -221,7 +398,7 @@ public class InventoryManagementService {
     }
 
     public void addLocation(Location location) throws Exception {
-        locationRepository.save(Objects.requireNonNull(checkIfLocationAlreadyExists(location)));
+        locationRepository.saveAndFlush(Objects.requireNonNull(checkIfLocationAlreadyExists(location)));
     }
 
     private Location checkIfLocationAlreadyExists(Location location) throws Exception {
@@ -241,7 +418,7 @@ public class InventoryManagementService {
     }
 
     public void addSupplier(Supplier supplier) throws Exception {
-        supplierRepository.save(Objects.requireNonNull(checkIfSupplierAlreadyExists(supplier)));
+        supplierRepository.saveAndFlush(Objects.requireNonNull(checkIfSupplierAlreadyExists(supplier)));
     }
 
     private Supplier checkIfSupplierAlreadyExists(Supplier supplier) throws Exception {
@@ -250,6 +427,13 @@ public class InventoryManagementService {
             throw new Exception("Lieferant \"" + supplierDuplicate.getSupplierName() + "\" existiert bereits!");
         }
         return supplier;
+    }
+
+    // ####################### Pictures #######################
+
+    public Picture getPicture(Integer id) {
+        var picture = pictureRepository.findById(id);
+        return picture.orElse(null);
     }
 
     // ####################### Department #######################
@@ -275,7 +459,7 @@ public class InventoryManagementService {
     }
 
     public void addDepartment(Department department) throws Exception {
-        departmentRepository.save(Objects.requireNonNull(checkIfDepartmentAlreadyExists(department)));
+        departmentRepository.saveAndFlush(Objects.requireNonNull(checkIfDepartmentAlreadyExists(department)));
     }
 
     private Department checkIfDepartmentAlreadyExists(Department department) throws Exception {
@@ -292,10 +476,27 @@ public class InventoryManagementService {
         return departmentRepository.findByDepartmentId(id).getDepartmentMembers();
     }
 
+    public DepartmentMember getDepartmentMemberByUserId(Integer id) {
+        var member = departmentMemberRepository.findByUserId(id);
+        // there MUST be at least two people per department who can drop review, so the property will be overwritten if there aren't
+        if (!member.isDroppingReviewer()) {
+            var members = getAllDepartmentMembersFromDepartmentId(member.getDepartment().getId());
+            var count = members.stream().filter(DepartmentMember::isDroppingReviewer).count();
+            if (count <= 1) {
+                member.setDroppingReviewer(true);
+            }
+        }
+        return member;
+    }
+
+    public void updateDepartmentMember(DepartmentMember member) {
+        departmentMemberRepository.saveAndFlush(member);
+    }
+
     public Department addDepartmentMemberToDepartment(Integer departmentId, Integer userId) throws Exception {
         Department department = departmentRepository.findByDepartmentId(departmentId);
         if (department != null) {
-            departmentMemberRepository.save(Objects.requireNonNull(checkIfDepartmentMemberIsAlreadyAssignedToADepartment(userId, department)));
+            departmentMemberRepository.saveAndFlush(Objects.requireNonNull(checkIfDepartmentMemberIsAlreadyAssignedToADepartment(userId, department)));
             return department;
         } else {
             throw new Exception("Die Abteilung existiert nicht! Bitte die IT kontaktieren!");
@@ -328,7 +529,7 @@ public class InventoryManagementService {
     // ####################### Change #######################
 
     public void addChange(Change change) {
-        changeRepository.save(change);
+        changeRepository.saveAndFlush(change);
     }
 
     // ####################### Print #######################
@@ -356,7 +557,7 @@ public class InventoryManagementService {
         printer.setPrinterIp("tcp://" + printer.getPrinterIp());
         printer.setPrinterModel("QL-820NWB");
         printer.setLabelFormat("17x54");
-        printerRepository.save(Objects.requireNonNull(checkIfPrinterAlreadyExists(printer)));
+        printerRepository.saveAndFlush(Objects.requireNonNull(checkIfPrinterAlreadyExists(printer)));
     }
 
     private Printer checkIfPrinterAlreadyExists(Printer printer) throws Exception {
@@ -371,14 +572,13 @@ public class InventoryManagementService {
     public void printQrCodeAndSetDefaultPrinter(Integer printerId, Integer itemId, Integer pieces, Integer userId) throws Exception {
         Printer printer = printerRepository.findByPrinterId(printerId);
         if (printer != null) {
-            PythonExecutor.printQrCodeWithPythonScript(itemId, printer.getPrinterIp(), printer.getPrinterModel(), pieces.toString());
+            PythonExecutor.printQrCodeWithPythonScript(pathToResourcesFolder, itemId, printer.getPrinterIp(), printer.getPrinterModel(), pieces.toString());
             if ((departmentMemberRepository.findByUserId(userId) != null) &&
                     (departmentMemberRepository.findByUserId(userId).getPrinter() == null ||
                             (departmentMemberRepository.findByUserId(userId).getPrinter() != null && !departmentMemberRepository.findByUserId(userId).getPrinter().equals(printer)))) {
                 DepartmentMember updatedDepartmentMember = departmentMemberRepository.findByUserId(userId);
                 updatedDepartmentMember.setPrinter(printer);
-                departmentMemberRepository.save(updatedDepartmentMember);
-                System.out.println("###################################");
+                departmentMemberRepository.saveAndFlush(updatedDepartmentMember);
             }
         } else {
             throw new Exception("Printer " + printerId + " does not exist!");

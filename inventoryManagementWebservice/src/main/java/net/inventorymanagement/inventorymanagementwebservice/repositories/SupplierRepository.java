@@ -8,6 +8,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SupplierRepository extends JpaRepository<Supplier, Integer> {
 
+    @Query(value = "SELECT * FROM supplier s WHERE s.id = :id", nativeQuery = true)
+    Supplier findBySupplierId(int id);
+
     @Query(value = "SELECT * FROM supplier s WHERE s.supplier_name = :supplierName", nativeQuery = true)
     Supplier findBySupplierName(String supplierName);
 

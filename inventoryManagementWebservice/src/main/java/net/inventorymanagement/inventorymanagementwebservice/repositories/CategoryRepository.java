@@ -8,6 +8,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Integer> {
 
+    @Query(value = "SELECT * FROM category c WHERE c.id = :id", nativeQuery = true)
+    Category findByCategoryId(int id);
+
     @Query(value = "SELECT * FROM category c WHERE c.category_name = :name", nativeQuery = true)
     Category findByCategoryName(String name);
 

@@ -1,11 +1,12 @@
 package net.inventorymanagement.inventorymanagementwebservice.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
+@NoArgsConstructor
 public class Change implements Comparable<Change> {
 
     @Id

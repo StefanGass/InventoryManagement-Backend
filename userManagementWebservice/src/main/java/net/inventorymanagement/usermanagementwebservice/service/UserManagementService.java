@@ -1,77 +1,99 @@
 package net.inventorymanagement.usermanagementwebservice.service;
 
+import net.inventorymanagement.usermanagementwebservice.dto.UserNameDTO;
 import net.inventorymanagement.usermanagementwebservice.model.User;
-import net.inventorymanagement.usermanagementwebservice.repository.UserManagementRepository;
-import net.inventorymanagement.usermanagementwebservice.utils.FileReader;
+import net.inventorymanagement.usermanagementwebservice.repository.TeamRepository;
+import net.inventorymanagement.usermanagementwebservice.repository.UserRepository;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
+import javax.naming.Context;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.*;
+import java.io.BufferedReader;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Hashtable;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * User management rest service, responsible for all the program logic.
  */
 
 @Service
+@Log4j2
 public class UserManagementService {
 
+    @Value("${active.directory.url}")
+    private String activeDirectoryUrl;
+
+    @Value("${active.directory.search.base}")
+    private String activeDirectorySearchBase;
+
+    @Value("${active.directory.search.filter}")
+    private String activeDirectorySearchFilter;
+
+    @Value("${active.directory.binding.user}")
+    private String activeDirectoryBindingUser;
+
+    @Value("${path.to.active-directory-binding-pwd}")
+    private String pathToActiveDirectoryBindingPwdCsv;
+
+    private final UserRepository userRepository;
+    private final TeamRepository teamRepository;
+
     @Autowired
-    private UserManagementRepository userManagementRepository;
+    public UserManagementService(UserRepository userRepository, TeamRepository teamRepository) {
+        this.userRepository = userRepository;
+        this.teamRepository = teamRepository;
+    }
 
     // GET or create one user, if it doesn't exist already
-    // user data is created from login-name and might need additional manipulation
-    public User getOneData(String username) {
-        username = prepareUsername(username);
-        String firstName = getFirstName(username);
-        String lastName = getLastName(username);
-        String mailAddress = firstName.toLowerCase() + "." + lastName.toLowerCase() + "@kultur-burgenland.at";
-        Integer userIndex = getUserIndex(firstName, lastName);
-        if (userIndex != -1) {
-            User user = userManagementRepository.findByUserId(userIndex);
+    public User getUserData(String username) throws Exception {
+        User user = userRepository.findByUserLogonName(username);
+        if (user != null) {
             user.setLastLogin(LocalDateTime.now());
-            return userManagementRepository.save(user);
+            return userRepository.saveAndFlush(user);
         } else {
-            System.out.println("Created new user " + firstName + " " + lastName + ".");
-            return userManagementRepository.save(new User(firstName, lastName, mailAddress, -1, false,
-                    false, false, LocalDateTime.now(), true));
+            User activeDirectoryUserData = getActiveDirectoryUserData(username);
+            return userRepository.saveAndFlush(
+                    new User(
+                            activeDirectoryUserData.getUserLogonName(),
+                            activeDirectoryUserData.getFirstName(),
+                            activeDirectoryUserData.getLastName(),
+                            activeDirectoryUserData.getMailAddress(),
+                            null,
+                            false,
+                            false,
+                            false,
+                            LocalDateTime.now(),
+                            activeDirectoryUserData.isActive(),
+                            false,
+                            false
+                    )
+            );
         }
     }
 
-    // checks if user already exists inside database
-    private Integer getUserIndex(String firstName, String lastName) {
-        List<User> userList = userManagementRepository.findAll();
-        for (int i = 0; i < userList.size(); i++) {
-            for (User entry : userList) {
-                if (Objects.equals(entry.getFirstName(), firstName) && Objects.equals(entry.getLastName(), lastName)) {
-                    return entry.getId();
-                }
-            }
-        }
-        return -1;
+    // GET all active directory members
+    public List<User> getAllActiveDirectoryUserData() throws Exception {
+        List<User> activeDirectoryUserList = new ArrayList<>();
+        addAllActiveDirectoryMembersToList(activeDirectoryUserList);
+        return activeDirectoryUserList;
     }
 
-    // GET team
-    // gets group id from user, checks if he/she is a teamleader and returns all members of his team if true
-    public List<User> getTeamData(Integer id) {
-        User teamLeader = userManagementRepository.findByUserId(id);
-        List<User> team = new ArrayList<>();
-        if (teamLeader.isTeamLeader()) {
-            team = userManagementRepository.findByGroupId(teamLeader.getGroupId());
-            team.sort(Comparator.naturalOrder());
-        }
-        return team;
-    }
-
-    // GET all
+    // GET all user data
     // checks if user is super admin and returns all users if true
-    public List<User> getAllData(Integer id) {
-        User admin = userManagementRepository.findByUserId(id);
+    public List<User> getAllUsersData(Integer id) {
+        User admin = userRepository.findByUserId(id);
         if (admin.isAdmin() || admin.isSuperAdmin()) {
-            List<User> allUsers = userManagementRepository.findAll();
+            List<User> allUsers = userRepository.findAll();
             allUsers.sort(Comparator.naturalOrder());
             return allUsers;
         } else {
@@ -79,59 +101,126 @@ public class UserManagementService {
         }
     }
 
-    // additional manipulation of username for special usernames
-    private String prepareUsername(String username) {
-        username = username.replaceAll("\"", "").replaceAll(" ", "_");
-        List<String> userExceptionsList = new ArrayList<>();
-        FileReader fileReader = FileReader.getInstance();
-        fileReader.loadFile(userExceptionsList);
-        if (!userExceptionsList.isEmpty()) {
-            for (String entry : userExceptionsList) {
-                String[] userExceptionsEntry = entry.split(";");
-                if (userExceptionsEntry[0].equalsIgnoreCase(username)) {
-                    username = userExceptionsEntry[1];
-                }
+    // GET users username
+    public UserNameDTO getUsername(int id) {
+        User user = userRepository.findByUserId(id);
+        return new UserNameDTO(user.getId(), user.getFirstName(), user.getLastName());
+    }
+
+    // GET all users usernames
+    public List<UserNameDTO> getAllUsernames(boolean activeUsersOnly) {
+        List<User> allUsersList = userRepository.findAll();
+        List<UserNameDTO> allUsernamesDTOList = new ArrayList<>();
+        for (User user : allUsersList) {
+            if (activeUsersOnly && user.isActive()) {
+                allUsernamesDTOList.add(new UserNameDTO(user.getId(), user.getFirstName(), user.getLastName()));
+            } else {
+                allUsernamesDTOList.add(new UserNameDTO(user.getId(), user.getFirstName(), user.getLastName()));
             }
         }
-        username = replaceSpecialCharacters(username);
-        return username;
+        allUsernamesDTOList.sort(Comparator.naturalOrder());
+        return allUsernamesDTOList;
     }
 
-    // remove some special characters from the string
-    private String replaceSpecialCharacters(String name) {
-        name = name.toLowerCase()
-                .replaceAll("ä", "ae").replaceAll("ö", "oe").replaceAll("ü", "ue")
-                .replaceAll("á", "a").replaceAll("à", "a").replaceAll("â", "a")
-                .replaceAll("é", "e").replaceAll("è", "e").replaceAll("ê", "e")
-                .replaceAll("í", "i").replaceAll("ì", "i").replaceAll("î", "i")
-                .replaceAll("ó", "o").replaceAll("ò", "o").replaceAll("ô", "o")
-                .replaceAll("ú", "u").replaceAll("ù", "u").replaceAll("û", "u")
-                .replaceAll("ß", "ss");
-        return name;
-    }
-
-    // gets first part of the full name and formats it correctly
-    private String getFirstName(String username) {
-        String[] splitString = username.split("_");
-        if (splitString[0].contains("-")) {
-            String[] splitStringTwo = splitString[0].split("-");
-            return splitStringTwo[0].substring(0, 1).toUpperCase() + splitStringTwo[0].substring(1).toLowerCase() + "-" +
-                    splitStringTwo[1].substring(0, 1).toUpperCase() + splitStringTwo[1].substring(1).toLowerCase();
-        } else {
-            return splitString[0].substring(0, 1).toUpperCase() + splitString[0].substring(1).toLowerCase();
+    // GET all usernames from list
+    public List<UserNameDTO> getUsernameFromList(List<UserNameDTO> userNameDTOList) {
+        for (UserNameDTO userNameDTO : userNameDTOList) {
+            User user = userRepository.findByUserId(userNameDTO.getId());
+            userNameDTO.setName(user.getFirstName() + " " + user.getLastName());
         }
+        userNameDTOList.sort(Comparator.naturalOrder());
+        return userNameDTOList;
     }
 
-    // gets last part of the full name and formats it correctly
-    private String getLastName(String username) {
-        String[] splitString = username.split("_");
-        if (splitString[splitString.length - 1].contains("-")) {
-            String[] splitStringTwo = splitString[splitString.length - 1].split("-");
-            return splitStringTwo[0].substring(0, 1).toUpperCase() + splitStringTwo[0].substring(1).toLowerCase() + "-" +
-                    splitStringTwo[1].substring(0, 1).toUpperCase() + splitStringTwo[1].substring(1).toLowerCase();
-        } else {
-            return splitString[splitString.length - 1].substring(0, 1).toUpperCase() + splitString[splitString.length - 1].substring(1).toLowerCase();
+    // ####################### Active Directory #######################
+
+    private User getActiveDirectoryUserData(String username) throws Exception {
+        DirContext context = getActiveDirectoryContext();
+        NamingEnumeration<SearchResult> results = getActiveDirectorySearchResult(context);
+        while (results.hasMore()) {
+            User user = getUserDataFromActiveDirectorySearchResult(results.next());
+            if (username.equalsIgnoreCase(user.getUserLogonName())) {
+                context.close();
+                return user;
+            }
         }
+        context.close();
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found in Active Directory!");
+    }
+
+    private void addAllActiveDirectoryMembersToList(List<User> activeDirectoryUserList) throws Exception {
+        DirContext context = getActiveDirectoryContext();
+        NamingEnumeration<SearchResult> results = getActiveDirectorySearchResult(context);
+        while (results.hasMore()) {
+            User user = getUserDataFromActiveDirectorySearchResult(results.next());
+            activeDirectoryUserList.add(user);
+        }
+        context.close();
+    }
+
+    private DirContext getActiveDirectoryContext() throws Exception {
+        String username = activeDirectoryBindingUser;
+        String password = readActiveDirectoryBindingPassword();
+
+        Hashtable<String, String> env = new Hashtable<>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(Context.PROVIDER_URL, activeDirectoryUrl);
+        env.put(Context.SECURITY_AUTHENTICATION, "simple");
+        env.put(Context.SECURITY_PRINCIPAL, username);
+        env.put(Context.SECURITY_CREDENTIALS, password);
+
+        return new InitialDirContext(env);
+    }
+
+    private String readActiveDirectoryBindingPassword() throws Exception {
+        BufferedReader br = new BufferedReader(new java.io.FileReader(pathToActiveDirectoryBindingPwdCsv));
+        String password = br.readLine();
+        br.close();
+        return password;
+    }
+
+    private NamingEnumeration<SearchResult> getActiveDirectorySearchResult(DirContext context) throws NamingException {
+        String searchBase = activeDirectorySearchBase;
+        String searchFilter = activeDirectorySearchFilter;
+
+        SearchControls controls = new SearchControls();
+        controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        String[] attributesToRetrieve = {
+                "userPrincipalName",    // user logon name
+                "userAccountControl",   // if user is activated or deactivated
+                "givenName",            // first name
+                "sn",                   // last name
+                "mail"                  // e-mail address
+        };
+        controls.setReturningAttributes(attributesToRetrieve);
+
+        return context.search(searchBase, searchFilter, controls);
+    }
+
+    private User getUserDataFromActiveDirectorySearchResult(SearchResult searchResult) throws NamingException {
+        Attributes attributes = searchResult.getAttributes();
+
+        Attribute userPrincipalNameAttr = attributes.get("userPrincipalName");
+        String userPrincipalName = (userPrincipalNameAttr != null) ? (String) userPrincipalNameAttr.get() : null;
+        if (userPrincipalName != null) {
+            userPrincipalName = userPrincipalName.split("@")[0];
+        }
+
+        Attribute userAccountControlAttr = attributes.get("userAccountControl");
+        String userAccountControlValueStr = (String) userAccountControlAttr.get();
+        int userAccountControlValue = Integer.parseInt(userAccountControlValueStr);
+        boolean isActive = (userAccountControlValue & 2) == 0;
+
+        Attribute firstNameAttr = attributes.get("givenName");
+        String firstName = (firstNameAttr != null) ? (String) firstNameAttr.get() : null;
+
+        Attribute lastNameAttr = attributes.get("sn");
+        String lastName = (lastNameAttr != null) ? (String) lastNameAttr.get() : null;
+
+        Attribute emailAttr = attributes.get("mail");
+        String email = (emailAttr != null) ? (String) emailAttr.get() : null;
+
+        return new User(userPrincipalName, firstName, lastName, email, isActive);
     }
 
 }

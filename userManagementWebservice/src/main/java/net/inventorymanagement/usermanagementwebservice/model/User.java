@@ -1,12 +1,10 @@
 package net.inventorymanagement.usermanagementwebservice.model;
 
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import java.time.LocalDateTime;
 
 /**
@@ -14,36 +12,53 @@ import java.time.LocalDateTime;
  */
 
 @Entity
+@Table(name = "user")
 @Getter
 @Setter
+@ToString
 public class User implements Comparable<User> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+    private String userLogonName;
     private String firstName;
     private String lastName;
     private String mailAddress;
-    private Integer groupId;
+    @OneToOne
+    @JoinColumn(name = "team_id")
+    private Team team;
     private boolean teamLeader;
     private boolean admin;
     private boolean superAdmin;
     private LocalDateTime lastLogin;
     private boolean active;
+    private boolean authUserManagement;
+    private boolean authInventoryManagement;
 
     public User() {
     }
 
-    public User(String firstName, String lastName, String mailAddress, Integer groupId, boolean teamLeader,
-                boolean admin, boolean superAdmin, LocalDateTime lastLogin, boolean active) {
+    public User(String userLogonName, String firstName, String lastName, String mailAddress, Team team, boolean teamLeader, boolean admin, boolean superAdmin, LocalDateTime lastLogin, boolean active, boolean authUserManagement, boolean authInventoryManagement) {
+        this.userLogonName = userLogonName;
         this.firstName = firstName;
         this.lastName = lastName;
         this.mailAddress = mailAddress;
-        this.groupId = groupId;
+        this.team = team;
         this.teamLeader = teamLeader;
         this.admin = admin;
         this.superAdmin = superAdmin;
         this.lastLogin = lastLogin;
+        this.active = active;
+        this.authUserManagement = authUserManagement;
+        this.authInventoryManagement = authInventoryManagement;
+    }
+
+    public User(String userLogonName, String firstName, String lastName, String mailAddress, boolean active) {
+        this.userLogonName = userLogonName;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.mailAddress = mailAddress;
         this.active = active;
     }
 

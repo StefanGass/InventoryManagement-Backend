@@ -6,7 +6,7 @@ import subprocess
 # pip3 install brother-ql
 
 # Example exection:
-# python3 ./print_qr.py 1 tcp://192.168.0.5 QL-820NWB 3
+# python3 ./print_qr.py 1 tcp://IP.OF.YOUR.PRINTER QL-820NWB 3
 
 # Printer label 17x54mm requires 165x566px
 
@@ -24,7 +24,7 @@ def execute_bash_command(bash_command):
     process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
 
-# brother_ql -p tcp://192.168.6.181 -m QL-820NWB print -l 17x54 ' + qr_codes_path + file_name
+# brother_ql -p tcp://IP.OF.YOUR.PRINTER -m QL-820NWB print -l 17x54 qr_codes_path/file_name
 
 print_command = 'brother_ql -p ' + printer_ip + ' -m ' + printer_model + ' print -l 17x54 ' + qr_codes_path + file_name
 for i in range(printer_counter):
