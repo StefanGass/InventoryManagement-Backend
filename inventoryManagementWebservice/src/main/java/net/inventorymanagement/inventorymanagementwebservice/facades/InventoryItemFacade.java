@@ -52,8 +52,10 @@ public class InventoryItemFacade {
         inventoryItemDTO.setItemInternalNumber(model.getItemInternalNumber());
         inventoryItemDTO.setItemName(model.getItemName());
         inventoryItemDTO.setSerialNumber(model.getSerialNumber());
+        inventoryItemDTO.setWarrantyEndDate(model.getWarrantyEndDate());
         inventoryItemDTO.setSupplier(model.getSupplier());
         inventoryItemDTO.setLocation(model.getLocation());
+        inventoryItemDTO.setRoom(model.getRoom());
         inventoryItemDTO.setPieces(model.getPieces());
         inventoryItemDTO.setPiecesStored(model.getPiecesStored());
         inventoryItemDTO.setPiecesIssued(model.getPiecesIssued());
@@ -97,8 +99,10 @@ public class InventoryItemFacade {
         inventoryItem.setType(type);
         inventoryItem.setItemName(inventoryItemDTO.getItemName());
         inventoryItem.setSerialNumber(inventoryItemDTO.getSerialNumber());
+        inventoryItem.setWarrantyEndDate(inventoryItemDTO.getWarrantyEndDate());
         inventoryItem.setSupplier(supplier);
         inventoryItem.setLocation(location);
+        inventoryItem.setRoom(inventoryItemDTO.getRoom());
         inventoryItem.setDepartment(department);
         inventoryItem.setPieces(inventoryItemDTO.getPieces());
         inventoryItem.setPiecesStored(inventoryItemDTO.getPiecesStored());

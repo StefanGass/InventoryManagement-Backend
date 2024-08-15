@@ -21,8 +21,10 @@ public class InventoryItemDTO implements Comparable<InventoryItemDTO> {
     private Type type;
     private String itemName;
     private String serialNumber;
+    private LocalDateTime warrantyEndDate;
     private Supplier supplier;
     private Location location;
+    private String room;
     private Integer pieces;
     private Integer piecesStored;
     private Integer piecesIssued;
@@ -43,8 +45,8 @@ public class InventoryItemDTO implements Comparable<InventoryItemDTO> {
     }
 
     public InventoryItemDTO(Integer id, String itemInternalNumber, Type type, String itemName,
-                            String serialNumber, Supplier supplier, Location location,
-                            Integer pieces, Integer piecesStored, Integer piecesIssued,
+                            String serialNumber, LocalDateTime warrantyEndDate, Supplier supplier, Location location,
+                            String room, Integer pieces, Integer piecesStored, Integer piecesIssued,
                             Integer piecesDropped, String issuedTo, LocalDateTime deliveryDate,
                             LocalDateTime issueDate, LocalDateTime droppingDate, String status,
                             LocalDateTime creationDate, LocalDateTime lastChangedDate, boolean active,
@@ -54,8 +56,10 @@ public class InventoryItemDTO implements Comparable<InventoryItemDTO> {
         this.type = type;
         this.itemName = itemName;
         this.serialNumber = serialNumber;
+        this.warrantyEndDate = warrantyEndDate;
         this.supplier = supplier;
         this.location = location;
+        this.room = room;
         this.pieces = pieces;
         this.piecesStored = piecesStored;
         this.piecesIssued = piecesIssued;
@@ -77,11 +81,13 @@ public class InventoryItemDTO implements Comparable<InventoryItemDTO> {
         this.userName = dto.getUserName();
         this.id = dto.getId();
         this.itemInternalNumber = dto.getItemInternalNumber();
+        this.warrantyEndDate = dto.getWarrantyEndDate();
         this.type = dto.getType();
         this.itemName = dto.getItemName();
         this.serialNumber = dto.getSerialNumber();
         this.supplier = dto.getSupplier();
         this.location = dto.getLocation();
+        this.room = dto.getRoom();
         this.pieces = dto.getPieces();
         this.piecesStored = dto.getPiecesStored();
         this.piecesIssued = dto.getPiecesIssued();

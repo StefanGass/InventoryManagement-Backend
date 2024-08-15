@@ -281,6 +281,13 @@ public class InventoryManagementController {
         return excelFileGenerator.generateFile(inventoryItems, filterString);
     }
 
+    // ####################### Item name #######################
+
+    @GetMapping(path = "itemname/{departmentId}")
+    public List<String> getAllItemNamesByDepartment(@PathVariable("departmentId") Integer departmentId) {
+        return inventoryManagementService.getAllItemNamesByDepartment(departmentId);
+    }
+
     // ####################### Type #######################
 
     @GetMapping(path = "type")
@@ -318,6 +325,13 @@ public class InventoryManagementController {
     public String addLocation(@RequestBody Location location) throws Exception {
         inventoryManagementService.addLocation(location);
         return "Standort \"" + location.getLocationName() + "\" erfolgreich hinzugefügt.";
+    }
+
+    // ####################### Room #######################
+
+    @GetMapping(path = "room/{departmentId}")
+    public List<String> getAllRoomsByDepartment(@PathVariable("departmentId") Integer departmentId) {
+        return inventoryManagementService.getAllRoomsByDepartment(departmentId);
     }
 
     // ####################### Supplier #######################

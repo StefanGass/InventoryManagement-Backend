@@ -20,6 +20,18 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, In
     @Query(value = "SELECT * FROM inventory_item i WHERE i.item_internal_number = :itemInternalNumber", nativeQuery = true)
     InventoryItem findByItemInternalNumber(String itemInternalNumber);
 
+    @Query(value = "SELECT DISTINCT item_name FROM inventory_item i WHERE i.item_name IS NOT NULL AND i.item_name != '' ORDER BY item_name", nativeQuery = true)
+    List<String> findAllItemNames();
+
+    @Query(value = "SELECT DISTINCT item_name FROM inventory_item i WHERE i.department_id = :departmentId AND i.item_name IS NOT NULL AND i.item_name != '' ORDER BY item_name", nativeQuery = true)
+    List<String> findAllItemNamesByDepartmentId(int departmentId);
+
+    @Query(value = "SELECT DISTINCT room FROM inventory_item i WHERE i.room IS NOT NULL AND i.room != '' ORDER BY room", nativeQuery = true)
+    List<String> findAllRooms();
+
+    @Query(value = "SELECT DISTINCT room FROM inventory_item i WHERE i.department_id = :departmentId AND i.room IS NOT NULL AND i.room != '' ORDER BY room", nativeQuery = true)
+    List<String> findAllRoomsByDepartmentId(int departmentId);
+
     @Query(value = "SELECT i.* " +
             "FROM inventory_item i " +
             "JOIN `type` t ON i.type_id = t.id " +
@@ -31,8 +43,10 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, In
             "i.item_internal_number LIKE CONCAT('%', :search, '%') OR " +
             "i.item_name LIKE CONCAT('%', :search, '%') OR " +
             "i.serial_number LIKE CONCAT('%', :search, '%') OR " +
+            "i.warranty_end_date LIKE CONCAT('%', :search, '%') OR " +
             "i.old_item_number LIKE CONCAT('%', :search, '%') OR " +
             "i.delivery_date LIKE CONCAT('%', :search, '%') OR " +
+            "i.room LIKE CONCAT('%', :search, '%') OR " +
             "i.issued_to LIKE CONCAT('%', :search, '%') OR " +
             "i.issue_date LIKE CONCAT('%', :search, '%') OR " +
             "i.dropping_date LIKE CONCAT('%', :search, '%') OR " +
@@ -57,8 +71,10 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, In
             "i.item_internal_number LIKE CONCAT('%', :search, '%') OR " +
             "i.item_name LIKE CONCAT('%', :search, '%') OR " +
             "i.serial_number LIKE CONCAT('%', :search, '%') OR " +
+            "i.warranty_end_date LIKE CONCAT('%', :search, '%') OR " +
             "i.old_item_number LIKE CONCAT('%', :search, '%') OR " +
             "i.delivery_date LIKE CONCAT('%', :search, '%') OR " +
+            "i.room LIKE CONCAT('%', :search, '%') OR " +
             "i.issued_to LIKE CONCAT('%', :search, '%') OR " +
             "i.issue_date LIKE CONCAT('%', :search, '%') OR " +
             "i.dropping_date LIKE CONCAT('%', :search, '%') OR " +

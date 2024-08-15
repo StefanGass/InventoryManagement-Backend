@@ -1,0 +1,4 @@
+brother-ql
+qrcode
+pillow
+reportlab

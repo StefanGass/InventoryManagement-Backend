@@ -331,6 +331,16 @@ public class InventoryManagementService {
         sb.append(", ");
     }
 
+    // ####################### Item name #######################
+
+    public List<String> getAllItemNamesByDepartment(Integer departmentId) {
+        if (departmentId == 0) {
+            return inventoryItemRepository.findAllItemNames();
+        } else {
+            return inventoryItemRepository.findAllItemNamesByDepartmentId(departmentId);
+        }
+    }
+
     // ####################### Type #######################
 
     public List<Type> getAllTypes() {
@@ -407,6 +417,16 @@ public class InventoryManagementService {
             throw new Exception("Standort \"" + locationDuplicate.getLocationName() + "\" existiert bereits!");
         }
         return location;
+    }
+
+    // ####################### Room #######################
+
+    public List<String> getAllRoomsByDepartment(Integer departmentId) {
+        if (departmentId == 0) {
+            return inventoryItemRepository.findAllRooms();
+        } else {
+            return inventoryItemRepository.findAllRoomsByDepartmentId(departmentId);
+        }
     }
 
     // ####################### Supplier #######################

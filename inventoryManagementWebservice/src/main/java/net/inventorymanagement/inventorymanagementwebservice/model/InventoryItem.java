@@ -27,12 +27,14 @@ public class InventoryItem implements Comparable<InventoryItem>, Cloneable {
     private Type type;
     private String itemName;
     private String serialNumber;
+    private LocalDateTime warrantyEndDate;
     @OneToOne
     @JoinColumn(name = "supplier_id")
     private Supplier supplier;
     @OneToOne
     @JoinColumn(name = "location_id")
     private Location location;
+    private String room;
     private Integer pieces;
     private Integer piecesStored;
     private Integer piecesIssued;
@@ -98,12 +100,16 @@ public class InventoryItem implements Comparable<InventoryItem>, Cloneable {
     public String toString(int pictureCounter) {
         StringBuilder sb = new StringBuilder();
         sb.append("ID: {").append(id).append("}, ");
-        sb.append("Typ: {").append(type.getTypeName()).append("}, ");
         sb.append("Inventarnummer: {").append(itemInternalNumber).append("}, ");
-        sb.append("Beschreibung: {").append(checkIfEmpty(itemName)).append("}, ");
-        sb.append("Seriennummer: {").append(checkIfEmpty(serialNumber)).append("}, ");
-        sb.append("Standort: {").append(location.getLocationName()).append("}, ");
+        sb.append("Kategorie: {").append(type.getCategory().getCategoryName()).append("}, ");
+        sb.append("Typ: {").append(type.getTypeName()).append("}, ");
+        sb.append("alte Inventarnummer: {").append(checkIfStringIsEmpty(oldItemNumber)).append("}, ");
+        sb.append("Beschreibung: {").append(checkIfStringIsEmpty(itemName)).append("}, ");
+        sb.append("Seriennummer: {").append(checkIfStringIsEmpty(serialNumber)).append("}, ");
+        sb.append("Garantieablaufdatum: {").append(checkIfLocalDateTimeIsEmpty(warrantyEndDate)).append("}, ");
         sb.append("Abteilung: {").append(department.getDepartmentName()).append("}, ");
+        sb.append("Standort: {").append(location.getLocationName()).append("}, ");
+        sb.append("Raum: {").append(checkIfStringIsEmpty(room)).append("}, ");
         sb.append("Lieferant: {");
         if (supplier != null) {
             sb.append(supplier.getSupplierName());
@@ -111,44 +117,33 @@ public class InventoryItem implements Comparable<InventoryItem>, Cloneable {
             sb.append("leer");
         }
         sb.append("}, ");
-        sb.append("Lieferdatum: {");
-        if (deliveryDate != null) {
-            sb.append(deliveryDate.toLocalDate());
-        } else {
-            sb.append("leer");
-        }
-        sb.append("}, ");
+        sb.append("Lieferdatum: {").append(checkIfLocalDateTimeIsEmpty(deliveryDate)).append("}, ");
         sb.append("Stückzahl: {").append(pieces).append("}, ");
         sb.append("Stückzahl lagernd: {").append(piecesStored).append("}, ");
         sb.append("Stückzahl ausgegeben: {").append(piecesIssued).append("}, ");
         sb.append("Stückzahl ausgeschieden: {").append(piecesDropped).append("}, ");
-        sb.append("ausgegeben an: {").append(checkIfEmpty(issuedTo)).append("}, ");
-        sb.append("Ausgabedatum: {");
-        if (issueDate != null) {
-            sb.append(issueDate.toLocalDate());
-        } else {
-            sb.append("leer");
-        }
-        sb.append("}, ");
-        sb.append("Ausscheidedatum: {");
-        if (droppingDate != null) {
-            sb.append(droppingDate.toLocalDate());
-        } else {
-            sb.append("leer");
-        }
-        sb.append("}, ");
-        sb.append("Ausscheidegrund: {").append(checkIfEmpty(droppingReason)).append("}, ");
-        sb.append("alte Inventarnummer: {").append(checkIfEmpty(oldItemNumber)).append("}, ");
-        sb.append("Anmerkungen: {").append(checkIfEmpty(comments)).append("}, ");
+        sb.append("ausgegeben an: {").append(checkIfStringIsEmpty(issuedTo)).append("}, ");
+        sb.append("Ausgabedatum: {").append(checkIfLocalDateTimeIsEmpty(issueDate)).append("}, ");
+        sb.append("Ausscheidedatum: {").append(checkIfLocalDateTimeIsEmpty(droppingDate)).append("}, ");
+        sb.append("Ausscheidegrund: {").append(checkIfStringIsEmpty(droppingReason)).append("}, ");
+        sb.append("Anmerkungen: {").append(checkIfStringIsEmpty(comments)).append("}, ");
         sb.append("Bilder: {").append(pictureCounter).append("}");
         return sb.toString();
     }
 
-    private static String checkIfEmpty(String string) {
-        if (string == null || string.equals("")) {
+    private static String checkIfStringIsEmpty(String string) {
+        if (string == null || string.isBlank()) {
             return "leer";
         } else {
             return string;
+        }
+    }
+
+    private static String checkIfLocalDateTimeIsEmpty(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return "leer";
+        } else {
+            return dateTime.toLocalDate().toString();
         }
     }
 

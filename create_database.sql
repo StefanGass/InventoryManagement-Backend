@@ -1,8 +1,8 @@
 CREATE USER 'usermanagement'@'%' IDENTIFIED BY 'YOUR_SUPER_SECRET_PASSWORD';
 CREATE USER 'inventorymanagement'@'%' IDENTIFIED BY 'YOUR_SUPER_SECRET_PASSWORD';
 
-DROP DATABASE IF EXISTS inventorymanagement;
-DROP DATABASE IF EXISTS usermanagement;
+# DROP DATABASE IF EXISTS inventorymanagement;
+# DROP DATABASE IF EXISTS usermanagement;
 
 CREATE DATABASE IF NOT EXISTS inventorymanagement;
 CREATE DATABASE IF NOT EXISTS usermanagement;
@@ -44,11 +44,11 @@ CREATE TABLE IF NOT EXISTS user
         ON DELETE CASCADE
 );
 
-INSERT INTO team
-VALUES (1, 'Test-Gruppe');
+# INSERT INTO team
+# VALUES (1, 'Test-Gruppe');
 
-INSERT INTO user
-VALUES (1, 'Super Admin', 'Super', 'Admin', null, 1, true, true, true, null, true, false, false);
+# INSERT INTO user
+# VALUES (1, 'Super Admin', 'Super', 'Admin', null, 1, true, true, true, null, true, false, false);
 
 ############################################################################
 
@@ -135,7 +135,9 @@ CREATE TABLE IF NOT EXISTS inventory_item
     `type_id`                  INT,
     `item_name`                VARCHAR(255),
     `serial_number`            VARCHAR(255),
+    `warranty_end_date`        DATETIME,
     `location_id`              INT,
+    `room`                     VARCHAR(255),
     `supplier_id`              INT,
     `pieces`                   INT,
     `pieces_stored`            INT,
@@ -200,30 +202,30 @@ CREATE TABLE IF NOT EXISTS change_history
         ON DELETE CASCADE
 );
 
-INSERT INTO category
-VALUES (1, 'Testcategory', 'TEST');
+# INSERT INTO category
+# VALUES (1, 'Testcategory', 'TEST');
 
-INSERT INTO type
-VALUES (1, 'Testtype', 1);
+# INSERT INTO type
+# VALUES (1, 'Testtype', 1);
 
-INSERT INTO location
-VALUES (1, 'Testlocation');
+# INSERT INTO location
+# VALUES (1, 'Testlocation');
 
-INSERT INTO supplier
-VALUES (1, 'Testsupplier', 'https://www.testsupplier.at');
+# INSERT INTO supplier
+# VALUES (1, 'Testsupplier', 'https://www.testsupplier.at');
 
-INSERT INTO department
-VALUES (1, 'Testdepartment');
+# INSERT INTO department
+# VALUES (1, 'Testdepartment');
 
-INSERT INTO printer
-VALUES (1, 'TEST-1', 'QL-820NWB', 'tcp://192.168.6.181', '17x54');
+# INSERT INTO printer
+# VALUES (1, 'TEST-1', 'QL-820NWB', 'tcp://192.168.6.181', '17x54');
 
-INSERT INTO department_member
-VALUES (1, 1, 1, true, 1);
+# INSERT INTO department_member
+# VALUES (1, 1, 1, true, 1);
 
-INSERT INTO inventory_item
-VALUES (1, 'TEST-2022-0001', 1, 'test', 'ABC123', 1, 1, 11, 11, 0, 0, '', null, null, null, '', '', 'LAGERND', true,
-        1, '', null, null, null, null, null);
+# INSERT INTO inventory_item
+# VALUES (1, 'TEST-2022-0001', 1, 'test', 'ABC123', null, 1, '', 1, 11, 11, 0, 0, '', null, null, null, '', '',
+#         'LAGERND', true, 1, '', null, null, null, null, null);
 
-INSERT INTO change_history
-VALUES (1, 1, '2022-08-18 10:17:26', 'Inventargegenstand angelegt.', 'Test test test', 1);
+# INSERT INTO change_history
+# VALUES (1, 1, '2022-08-18 10:17:26', 'Inventargegenstand angelegt.', 'Test test test', 1);

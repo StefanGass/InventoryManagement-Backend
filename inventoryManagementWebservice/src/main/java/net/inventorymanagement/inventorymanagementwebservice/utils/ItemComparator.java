@@ -17,7 +17,7 @@ public class ItemComparator {
             sb.append("Ausscheidung bestätigt: ");
         }
 
-            if (!originalItem.getItemName().equals(newItem.getItemName())) {
+        if (!originalItem.getItemName().equals(newItem.getItemName())) {
             sb.append("Beschreibung: {");
             sb.append(checkIfEmpty(originalItem.getItemName()));
             sb.append("} -> {");
@@ -42,11 +42,27 @@ public class ItemComparator {
             sb.append(checkIfEmpty(newItem.getSerialNumber()));
             sb.append("}, ");
         }
+        if (originalItem.getWarrantyEndDate() != null && newItem.getWarrantyEndDate() != null) {
+            if (!originalItem.getWarrantyEndDate().toLocalDate().isEqual(newItem.getWarrantyEndDate().toLocalDate())) {
+                getDateString("Garantieablaufdatum:", sb, originalItem.getWarrantyEndDate().toLocalDate(), newItem.getWarrantyEndDate().toLocalDate());
+            }
+        } else if (originalItem.getWarrantyEndDate() != null) {
+            getDateString("Garantieablaufdatum:", sb, originalItem.getWarrantyEndDate().toLocalDate(), null);
+        } else if (newItem.getWarrantyEndDate() != null) {
+            getDateString("Garantieablaufdatum:", sb, null, newItem.getWarrantyEndDate().toLocalDate());
+        }
         if (!originalItem.getLocation().equals(newItem.getLocation())) {
             sb.append("Standort: {");
             sb.append(originalItem.getLocation().getLocationName());
             sb.append("} -> {");
             sb.append(newItem.getLocation().getLocationName());
+            sb.append("}, ");
+        }
+        if (!originalItem.getRoom().equals(newItem.getRoom())) {
+            sb.append("Raum: {");
+            sb.append(originalItem.getRoom());
+            sb.append("} -> {");
+            sb.append(newItem.getRoom());
             sb.append("}, ");
         }
         if (!originalItem.getDepartment().equals(newItem.getDepartment())) {

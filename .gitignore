@@ -18,6 +18,9 @@ target/
 .springBeans
 .sts4-cache
 
+### Python virtual environment ###
+venv/
+
 ### IntelliJ IDEA ###
 .idea
 *.iws
@@ -37,13 +40,20 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-# Datasource local storage ignored files
+### Datasource local storage ignored files ###
 /dataSources/
 /dataSources.local.xml
 
-# Editor-based HTTP Client requests
+### Editor-based HTTP Client requests ###
 /httpRequests/
 
-# misc
+### Elasticsearch ###
+/net.*
+
+### Logs ###
+*.log
+*.log.*.gz
+
+### Misc ###
 .DS_Store
 *.pem

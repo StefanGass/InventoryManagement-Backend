@@ -28,15 +28,15 @@ public class DetailInventoryItemDTO extends InventoryItemDTO {
 
     // do not remove this
     public DetailInventoryItemDTO(Integer id, String itemInternalNumber, Type type, String itemName,
-                                  String serialNumber, Supplier supplier, Location location,
-                                  Integer pieces, Integer piecesStored, Integer piecesIssued,
-                                  Integer piecesDropped, String issuedTo, LocalDateTime deliveryDate,
+                                  String serialNumber, LocalDateTime warrantyEndDate, Supplier supplier,
+                                  Location location, String room, Integer pieces, Integer piecesStored,
+                                  Integer piecesIssued, Integer piecesDropped, String issuedTo, LocalDateTime deliveryDate,
                                   LocalDateTime issueDate, LocalDateTime droppingDate, String droppingReason,
                                   String comments, String status, List<Picture> pictures, List<Change> change,
                                   boolean active, Department department, String oldItemNumber, String droppingQueue,
                                   Integer droppingQueuePieces, String droppingQueueReason,
                                   Integer droppingQueueRequester, LocalDateTime droppingQueueDate) {
-        super(id, itemInternalNumber, type, itemName, serialNumber, supplier, location, pieces,
+        super(id, itemInternalNumber, type, itemName, serialNumber, warrantyEndDate, supplier, location, room, pieces,
                 piecesStored, piecesIssued, piecesDropped, issuedTo, deliveryDate, issueDate, droppingDate,
                 status, null, null, active, department, oldItemNumber, droppingQueue);
         this.droppingReason = droppingReason;
