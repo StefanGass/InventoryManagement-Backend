@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS team
     `name` VARCHAR(255)
 );
 
-CREATE TABLE IF NOT EXISTS user
+CREATE TABLE IF NOT EXISTS `user`
 (
     `id`                        INT AUTO_INCREMENT PRIMARY KEY,
     `user_logon_name`           VARCHAR(255),
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS user
 # INSERT INTO team
 # VALUES (1, 'Test-Gruppe');
 
-# INSERT INTO user
+# INSERT INTO `user`
 # VALUES (1, 'Super Admin', 'Super', 'Admin', null, 1, true, true, true, null, true, false, false);
 
 ############################################################################
