@@ -29,7 +29,9 @@ img = qr.make_image(fill='black', back_color='white')
 fnt = ImageFont.truetype(relative_path + '_fonts/Roboto-Regular.ttf', 60)
 image = Image.new(mode="RGB", size=(566, 165), color="white")
 draw = ImageDraw.Draw(image)
-image.paste(img, (20, 20))
+
+img = img.convert("RGB")
+image.paste(img, (20, 20, 20 + img.size[0], 20 + img.size[1]))
 
 draw.text((180, 15), qr_code_text_first_line, font=fnt, fill=(0, 0, 0))
 draw.text((180, 80), qr_code_text_second_line, font=fnt, fill=(0, 0, 0))
