@@ -86,7 +86,7 @@ Furthermore, if you want to insert the test user and the test values into the da
 
 Next, the following files with the listed content must be created for the authentication process to work:
 
-userManagementWebservice/main/resources/active-directory-binding-pwd.csv:
+userManagementWebservice/main/src/resources/active-directory-binding-pwd.csv:
 
 ```
 yourActiveDirectoryBindingPassword
